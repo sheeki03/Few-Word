@@ -1,0 +1,57 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'mkdir -p .fsctx/{scratch/{tool_outputs,subagents},memory/{plans,history,patterns},index} 2>/dev/null; find .fsctx/scratch/tool_outputs -type f -mmin +60 -delete 2>/dev/null; find .fsctx/scratch/subagents -type f -mmin +120 -delete 2>/dev/null; if [ -d .git ] && ! grep -q \".fsctx/scratch\" .gitignore 2>/dev/null; then echo -e \"\\n# FewWord context plugin\\n.fsctx/scratch/\\n.fsctx/index/\" >> .gitignore 2>/dev/null && echo \"[fewword] Added to .gitignore\"; fi; echo \"[fewword] Ready\"'"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/offload_bash.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/mcp_interceptor.py\""
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'if [ -f .fsctx/index/current_plan.yaml ] && grep -q \"status: completed\" .fsctx/index/current_plan.yaml 2>/dev/null; then ts=$(date +%Y%m%d_%H%M%S); mv .fsctx/index/current_plan.yaml \".fsctx/memory/plans/archived_${ts}.yaml\" 2>/dev/null && echo \"[fewword] Archived completed plan\"; fi'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'size=$(du -sm .fsctx/scratch 2>/dev/null | cut -f1); if [ \"${size:-0}\" -gt 100 ]; then echo \"[fewword] Warning: .fsctx/scratch/ is ${size}MB - consider cleanup\"; fi'"
+          }
+        ]
+      }
+    ]
+  }
+}

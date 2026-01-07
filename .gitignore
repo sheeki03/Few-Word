@@ -1,0 +1,7 @@
+
+# Filesystem context plugin
+.fsctx/scratch/
+.fsctx/index/
+/.fsctx
+TESTING.md
+TEST_RESULTS.md
