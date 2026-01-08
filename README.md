@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="banner.png" alt="Kevin Malone - Why waste time say lot word when few word do trick?" width="600">
+</p>
+
 # FewWord
 
 > "Why waste time say lot word when few word do trick? Big output go file. Small word stay. Context happy. Me happy. Everyone go home by seven."
@@ -14,9 +18,9 @@ We ran the same 3 commands (`find`, `ls -la`, `env`) in two fresh Claude Code se
 
 | Metric | WITH Plugin | WITHOUT Plugin |
 |--------|-------------|----------------|
-| **Message Tokens** | **4.7k** | **26.0k** |
-| Tokens Saved | — | **21.3k** |
-| **Savings** | — | **82%** |
+| **Message Tokens** | **4.7k** | 26.0k |
+| **Tokens Saved** | **21.3k** | — |
+| **Savings** | **82%** | — |
 
 ### Understanding the Numbers
 
@@ -209,15 +213,35 @@ Claude: grep FAILED .fewword/scratch/tool_outputs/pytest_143022.txt
 
 ## Privacy & Security
 
-### What Gets Logged
-- Timestamp, session ID, event ID
-- Tool name (e.g., "find", "pytest")
-- Output file path
+### Bash Commands
 
-### What Does NOT Get Logged
-- Raw command arguments (may contain secrets)
-- Full command text
-- Environment variables
+| Logged | NOT Logged |
+|--------|------------|
+| Timestamp, session ID | Raw command arguments (may contain secrets) |
+| Tool name (e.g., "find", "pytest") | Full command text |
+| Output file path | Environment variables |
+
+### MCP Tools (Browser automation, GitHub, etc.)
+
+FewWord intercepts MCP tool calls (`mcp__*`) for two purposes:
+
+| What We Do | What We DON'T Do |
+|------------|------------------|
+| Log tool name (e.g., `mcp__github__create_issue`) | Log argument values (may contain tokens, secrets) |
+| Log input parameter keys (e.g., `["repo", "title"]`) | Store or transmit your data anywhere |
+| Clamp pagination (limit requests to 100 results max) | Block read-only operations |
+
+**Example metadata entry:**
+```json
+{
+  "timestamp": "2026-01-08T14:30:00",
+  "tool": "mcp__github__search_issues",
+  "input_keys": ["query", "repo", "limit"],  // Keys only, NOT values
+  "input_count": 3
+}
+```
+
+Your actual query strings, repo names, and other sensitive values are **never logged**.
 
 ---
 
@@ -238,7 +262,4 @@ MIT — Use it, modify it, share it.
 ## Contributing
 
 Issues and PRs welcome! Ideas for improvement:
-- [ ] Configuration file support
-- [ ] Semantic search integration
-- [ ] Smarter summarization of offloaded outputs
-- [ ] Pipeline support (currently skipped)
+- [ ] Opencode Support
