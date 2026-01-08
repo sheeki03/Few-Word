@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """
-PreToolUse hook: Rewrite Bash commands to offload large outputs to filesystem.
+PreToolUse hook: Rewrite Bash commands to offload outputs to filesystem.
 
 Input (stdin): JSON with tool_name, tool_input, cwd, session_id
 Output (stdout): JSON with hookSpecificOutput containing updatedInput
 
-The wrapper uses write-then-decide logic:
-1. Always capture stdout+stderr to file first
-2. After command completes, measure file size
-3. If small (<8KB): cat file to stdout, delete file (normal UX)
-4. If large: print pointer + preview only
-5. Always preserve exit code
+v1.3 features:
+- Tiered offloading: inline (<512B), compact pointer (512B-4KB), preview (>4KB)
+- Ultra-compact pointer (~35 tokens)
+- Smart preview: only for failures (exit != 0)
+- Session ID tracking for stats
+- Exit code in filename for smart retention
+- Manifest writing (append-only)
+- LATEST symlinks for easy retrieval
 """
 
 import json
@@ -22,9 +24,14 @@ from pathlib import Path
 from datetime import datetime
 
 
-# === Configuration (hardcoded for v1) ===
-SIZE_THRESHOLD = 8000  # bytes (~2000 tokens), below this show full output
-PREVIEW_LINES = 10     # lines to show from start and end for large outputs
+# === Configuration (env var overridable) ===
+INLINE_MAX = int(os.environ.get('FEWWORD_INLINE_MAX', 512))      # < this: show inline
+PREVIEW_MIN = int(os.environ.get('FEWWORD_PREVIEW_MIN', 4096))   # > this: add preview
+PREVIEW_LINES = int(os.environ.get('FEWWORD_PREVIEW_LINES', 5))  # max preview lines
+PREVIEW_LINE_MAX = 200  # truncate long preview lines
+OPEN_CMD = os.environ.get('FEWWORD_OPEN_CMD', '/context-open')   # retrieval command
+SHOW_PATH = os.environ.get('FEWWORD_SHOW_PATH', '0') == '1'      # append path to pointer
+VERBOSE_POINTER = os.environ.get('FEWWORD_VERBOSE_POINTER', '0') == '1'  # old v2.0 format
 
 # Interactive commands that should NEVER be intercepted
 INTERACTIVE_COMMANDS = {
@@ -83,9 +90,9 @@ def should_skip(command: str) -> tuple[bool, str]:
     if not command or not command.strip():
         return True, "empty command"
 
-    # Check for pipes - SKIP in v1 (exit code masking)
+    # Check for pipes - SKIP (exit code masking)
     if '|' in command:
-        return True, "pipeline (v1 skips to avoid exit code issues)"
+        return True, "pipeline (skips to avoid exit code issues)"
 
     first_cmd = get_first_command(command)
 
@@ -105,67 +112,190 @@ def should_skip(command: str) -> tuple[bool, str]:
     return False, ""
 
 
-def generate_wrapper(original_cmd: str, output_file: str, cwd: str) -> str:
-    """
-    Generate bash wrapper that implements write-then-decide logic.
+def get_session_id(cwd: str) -> str:
+    """Read current session ID from session.json."""
+    session_file = Path(cwd) / '.fewword' / 'index' / 'session.json'
+    try:
+        with open(session_file, 'r') as f:
+            data = json.load(f)
+            return data.get('session_id', '')
+    except (OSError, json.JSONDecodeError):
+        return ''
 
-    1. Capture to file first (can't know size ahead of time)
-    2. Measure after command completes
-    3. Small output -> cat + delete (normal UX)
-    4. Large output -> pointer + preview
-    5. Preserve exit code
+
+def generate_wrapper(original_cmd: str, output_dir: str, safe_cmd: str,
+                     timestamp: str, event_id: str, cwd: str, session_id: str) -> str:
     """
-    # Escape the output file path for shell
-    escaped_file = output_file.replace("'", "'\"'\"'")
+    Generate bash wrapper that implements tiered offloading.
+
+    v1.3: Tiered logic + compact pointer + smart preview + session tracking.
+
+    Tiers:
+    1. < INLINE_MAX (512B): Show inline, delete file
+    2. INLINE_MAX - PREVIEW_MIN (512B-4KB): Compact pointer only
+    3. > PREVIEW_MIN (4KB+): Compact pointer + preview (failures only)
+    """
+    # Escape paths for shell
+    escaped_dir = output_dir.replace("'", "'\"'\"'")
+    escaped_cwd = cwd.replace("'", "'\"'\"'")
+    escaped_open_cmd = OPEN_CMD.replace("'", "'\"'\"'")
+
+    # Relative path for manifest and optional display
+    rel_path = f".fewword/scratch/tool_outputs/{safe_cmd}_{timestamp}_{event_id}"
 
     wrapper = f'''
-__fewword_out='{escaped_file}'
-__fewword_dir="$(dirname "$__fewword_out")"
-mkdir -p "$__fewword_dir" 2>/dev/null
+set -o pipefail
 
-# 1. Capture stdout+stderr to file
-{{ {original_cmd} ; }} > "$__fewword_out" 2>&1
-__fewword_exit=$?
+__fw_dir='{escaped_dir}'
+__fw_cwd='{escaped_cwd}'
+__fw_cmd='{safe_cmd}'
+__fw_ts='{timestamp}'
+__fw_id='{event_id}'
+__fw_session='{session_id}'
+__fw_open_cmd='{escaped_open_cmd}'
+__fw_manifest="$__fw_cwd/.fewword/index/tool_outputs.jsonl"
 
-# 2. Measure size after command completes
-__fewword_bytes=$(wc -c < "$__fewword_out" 2>/dev/null | tr -d ' ')
-__fewword_lines=$(wc -l < "$__fewword_out" 2>/dev/null | tr -d ' ')
+mkdir -p "$__fw_dir" 2>/dev/null
+mkdir -p "$(dirname "$__fw_manifest")" 2>/dev/null
 
-# 3. Decide: small -> cat + delete, large -> pointer + preview
-if [ "${{__fewword_bytes:-0}}" -lt {SIZE_THRESHOLD} ]; then
-  # Small output: show full content (normal UX)
-  cat "$__fewword_out"
-  rm -f "$__fewword_out"
+# Temporary file (without exit code)
+__fw_tmp="$__fw_dir/${{__fw_cmd}}_${{__fw_ts}}_${{__fw_id}}_tmp.txt"
+
+# 1. Capture stdout+stderr to temp file, preserve real exit code
+# Use subshell ( ) not compound command {{ }} so 'exit N' in command doesn't exit wrapper
+( {original_cmd} ) > "$__fw_tmp" 2>&1
+__fw_exit=$?
+
+# 2. Final filename with exit code
+__fw_out="$__fw_dir/${{__fw_cmd}}_${{__fw_ts}}_${{__fw_id}}_exit${{__fw_exit}}.txt"
+__fw_rel_path=".fewword/scratch/tool_outputs/${{__fw_cmd}}_${{__fw_ts}}_${{__fw_id}}_exit${{__fw_exit}}.txt"
+
+# 3. Rename temp to final
+mv "$__fw_tmp" "$__fw_out" 2>/dev/null
+
+# 4. Measure size
+__fw_bytes=$(wc -c < "$__fw_out" 2>/dev/null | tr -d ' ')
+__fw_lines=$(wc -l < "$__fw_out" 2>/dev/null | tr -d ' ')
+
+# 5. Format size for display (human readable)
+if [ "${{__fw_bytes:-0}}" -ge 1048576 ]; then
+  __fw_size="$(((__fw_bytes + 524288) / 1048576))M"
+elif [ "${{__fw_bytes:-0}}" -ge 1024 ]; then
+  __fw_size="$(((__fw_bytes + 512) / 1024))K"
 else
-  # Large output: show pointer and preview
-  echo ""
-  echo "=== [FewWord: Output offloaded] ==="
-  echo "File: $__fewword_out"
-  echo "Size: $__fewword_bytes bytes, $__fewword_lines lines"
-  echo "Exit: $__fewword_exit"
-  echo ""
-  if [ "$__fewword_lines" -le {PREVIEW_LINES * 2} ]; then
-    echo "=== Full output ==="
-    cat "$__fewword_out"
-  else
-    echo "=== First {PREVIEW_LINES} lines ==="
-    head -{PREVIEW_LINES} "$__fewword_out"
-    __fewword_omitted=$(( __fewword_lines - {PREVIEW_LINES * 2} ))
-    echo ""
-    echo "... ($__fewword_omitted lines omitted) ..."
-    echo ""
-    echo "=== Last {PREVIEW_LINES} lines ==="
-    tail -{PREVIEW_LINES} "$__fewword_out"
-  fi
-  echo ""
-  echo "=== Retrieval commands ==="
-  echo "  Full: cat $__fewword_out"
-  echo "  Grep: grep 'pattern' $__fewword_out"
-  echo "  Range: sed -n '50,100p' $__fewword_out"
+  __fw_size="${{__fw_bytes}}B"
 fi
 
-# 4. Always preserve exit code
-exit $__fewword_exit
+# 6. Build compact pointer line (single line, no newlines)
+__fw_pointer="[fw $__fw_id] $__fw_cmd e=$__fw_exit $__fw_size ${{__fw_lines}}L | $__fw_open_cmd $__fw_id"
+'''
+
+    # Add path to pointer if FEWWORD_SHOW_PATH=1
+    if SHOW_PATH:
+        wrapper += '''
+__fw_pointer="$__fw_pointer | $__fw_rel_path"
+'''
+
+    # Verbose pointer for backwards compat
+    if VERBOSE_POINTER:
+        wrapper += f'''
+# VERBOSE MODE (FEWWORD_VERBOSE_POINTER=1)
+# Tier decision with verbose output
+if [ "${{__fw_bytes:-0}}" -lt {INLINE_MAX} ]; then
+  # INLINE: show full content, delete file
+  cat "$__fw_out"
+  rm -f "$__fw_out"
+else
+  # Large output: show verbose pointer and preview
+  echo ""
+  echo "=== [FewWord: Output offloaded] ==="
+  echo "File: $__fw_out"
+  echo "Size: $__fw_bytes bytes, $__fw_lines lines"
+  echo "Exit: $__fw_exit"
+  echo "ID: $__fw_id"
+  echo ""
+
+  if [ "$__fw_lines" -le 20 ]; then
+    echo "=== Full output ==="
+    cat "$__fw_out"
+  else
+    echo "=== First 10 lines ==="
+    head -10 "$__fw_out"
+    __fw_omitted=$(( __fw_lines - 20 ))
+    echo ""
+    echo "... ($__fw_omitted lines omitted) ..."
+    echo ""
+    echo "=== Last 10 lines ==="
+    tail -10 "$__fw_out"
+  fi
+
+  echo ""
+  echo "=== Retrieval commands ==="
+  echo "  Full: cat $__fw_out"
+  echo "  Latest: cat $__fw_dir/LATEST_$__fw_cmd.txt"
+  echo "  Grep: grep 'pattern' $__fw_out"
+
+  # Write manifest entry (append-only)
+  __fw_now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  printf '{{"type":"offload","id":"%s","session_id":"%s","created_at":"%s","cmd":"%s","exit_code":%d,"bytes":%d,"lines":%d,"path":"%s"}}\\n' \\
+    "$__fw_id" "$__fw_session" "$__fw_now" "$__fw_cmd" "$__fw_exit" "$__fw_bytes" "$__fw_lines" "$__fw_rel_path" \\
+    >> "$__fw_manifest" 2>/dev/null
+
+  # Create LATEST symlinks (absolute paths)
+  __fw_abs_out="$(cd "$(dirname "$__fw_out")" && pwd)/$(basename "$__fw_out")"
+  ln -sf "$__fw_abs_out" "$__fw_dir/LATEST.txt" 2>/dev/null
+  ln -sf "$__fw_abs_out" "$__fw_dir/LATEST_$__fw_cmd.txt" 2>/dev/null
+fi
+'''
+    else:
+        # Compact mode (default)
+        wrapper += f'''
+# COMPACT MODE (default)
+# Tier decision: inline < {INLINE_MAX}B, compact {INLINE_MAX}B-{PREVIEW_MIN}B, preview > {PREVIEW_MIN}B
+if [ "${{__fw_bytes:-0}}" -lt {INLINE_MAX} ]; then
+  # TIER 1 - INLINE: show full content, delete file
+  cat "$__fw_out"
+  rm -f "$__fw_out"
+elif [ "${{__fw_bytes:-0}}" -lt {PREVIEW_MIN} ]; then
+  # TIER 2 - COMPACT: pointer only, no preview
+  echo "$__fw_pointer"
+
+  # Write manifest entry (append-only)
+  __fw_now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  printf '{{"type":"offload","id":"%s","session_id":"%s","created_at":"%s","cmd":"%s","exit_code":%d,"bytes":%d,"lines":%d,"path":"%s"}}\\n' \\
+    "$__fw_id" "$__fw_session" "$__fw_now" "$__fw_cmd" "$__fw_exit" "$__fw_bytes" "$__fw_lines" "$__fw_rel_path" \\
+    >> "$__fw_manifest" 2>/dev/null
+
+  # Create LATEST symlinks (absolute paths)
+  __fw_abs_out="$(cd "$(dirname "$__fw_out")" && pwd)/$(basename "$__fw_out")"
+  ln -sf "$__fw_abs_out" "$__fw_dir/LATEST.txt" 2>/dev/null
+  ln -sf "$__fw_abs_out" "$__fw_dir/LATEST_$__fw_cmd.txt" 2>/dev/null
+else
+  # TIER 3 - PREVIEW: pointer + smart preview (failures only)
+  echo "$__fw_pointer"
+
+  # Show preview only for failures (exit != 0)
+  if [ "$__fw_exit" -ne 0 ]; then
+    # Plain tail - last {PREVIEW_LINES} lines, truncated to {PREVIEW_LINE_MAX} chars
+    tail -{PREVIEW_LINES} "$__fw_out" | cut -c1-{PREVIEW_LINE_MAX}
+  fi
+
+  # Write manifest entry (append-only)
+  __fw_now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  printf '{{"type":"offload","id":"%s","session_id":"%s","created_at":"%s","cmd":"%s","exit_code":%d,"bytes":%d,"lines":%d,"path":"%s"}}\\n' \\
+    "$__fw_id" "$__fw_session" "$__fw_now" "$__fw_cmd" "$__fw_exit" "$__fw_bytes" "$__fw_lines" "$__fw_rel_path" \\
+    >> "$__fw_manifest" 2>/dev/null
+
+  # Create LATEST symlinks (absolute paths)
+  __fw_abs_out="$(cd "$(dirname "$__fw_out")" && pwd)/$(basename "$__fw_out")"
+  ln -sf "$__fw_abs_out" "$__fw_dir/LATEST.txt" 2>/dev/null
+  ln -sf "$__fw_abs_out" "$__fw_dir/LATEST_$__fw_cmd.txt" 2>/dev/null
+fi
+'''
+
+    wrapper += '''
+# Always preserve exit code
+exit $__fw_exit
 '''
     return wrapper.strip()
 
@@ -189,7 +319,6 @@ def main():
     tool_input = input_data.get("tool_input", {})
     command = tool_input.get("command", "")
     cwd = input_data.get("cwd", os.getcwd())
-    session_id = input_data.get("session_id", "unknown")
 
     # Check escape hatch
     if is_disabled(cwd):
@@ -200,17 +329,20 @@ def main():
     if skip:
         sys.exit(0)
 
+    # Get session ID from session.json
+    session_id = get_session_id(cwd)
+
     # Generate unique event ID for correlation
     event_id = uuid.uuid4().hex[:8]
 
-    # Generate output filename with event_id for correlation
+    # Generate filename components
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     first_cmd = get_first_command(command)
     safe_cmd = re.sub(r'[^a-zA-Z0-9_-]', '_', first_cmd)[:20]
-    output_file = f"{cwd}/.fewword/scratch/tool_outputs/{safe_cmd}_{timestamp}_{event_id}.txt"
+    output_dir = f"{cwd}/.fewword/scratch/tool_outputs"
 
     # Generate wrapped command
-    wrapped = generate_wrapper(command, output_file, cwd)
+    wrapped = generate_wrapper(command, output_dir, safe_cmd, timestamp, event_id, cwd, session_id)
 
     # Return the updated input with correct JSON envelope
     output = {

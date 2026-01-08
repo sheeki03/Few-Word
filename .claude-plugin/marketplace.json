@@ -9,8 +9,8 @@
     {
       "name": "fewword",
       "source": "./plugins/fewword",
-      "description": "Offloads large command outputs to filesystem. Saves 82% of message tokens.",
-      "version": "1.2.0",
+      "description": "Tiered offloading with ultra-compact pointers (~35 tokens). Smart retention + session stats.",
+      "version": "1.3.0",
       "author": {
         "name": "Sheeki"
       }

@@ -1,7 +1,17 @@
+# FewWord scratch and index (user data)
+.fewword/
 
-# FewWord plugin
-.fewword/scratch/
-.fewword/index/
-/.fewword
+# Python cache
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Test files
 TESTING.md
 TEST_RESULTS.md
+tests/
+
+# FewWord context plugin
+.fewword/scratch/
+.fewword/index/

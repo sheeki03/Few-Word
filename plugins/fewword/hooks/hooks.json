@@ -6,7 +6,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'mkdir -p .fewword/{scratch/{tool_outputs,subagents},memory/{plans,history,patterns},index} 2>/dev/null; find .fewword/scratch/tool_outputs -type f -mmin +60 -delete 2>/dev/null; find .fewword/scratch/subagents -type f -mmin +120 -delete 2>/dev/null; if [ -d .git ] && ! grep -q \".fewword/scratch\" .gitignore 2>/dev/null; then echo -e \"\\n# FewWord context plugin\\n.fewword/scratch/\\n.fewword/index/\" >> .gitignore 2>/dev/null && echo \"[fewword] Added to .gitignore\"; fi; echo \"[fewword] Ready\"'"
+            "command": "bash -c 'mkdir -p .fewword/{scratch/{tool_outputs,subagents},memory/{plans,history,patterns,pinned},index} 2>/dev/null; if [ -d .git ] && ! grep -q \".fewword/scratch\" .gitignore 2>/dev/null; then echo -e \"\\n# FewWord context plugin\\n.fewword/scratch/\\n.fewword/index/\" >> .gitignore 2>/dev/null && echo \"[fewword] Added to .gitignore\"; fi'"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session_init.py\""
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/smart_cleanup.py\""
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session_inventory.py\""
           }
         ]
       }

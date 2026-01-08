@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FewWord - Context Engineering for Claude Code</title>
-    <meta name="description" content="Save 82% of message tokens. Automatically offload large outputs to filesystem.">
+    <meta name="description" content="Save 82% of message tokens. Tiered offloading with ultra-compact pointers (~35 tokens).">
     <style>
         :root {
             --bg: #0d1117;
@@ -15,6 +15,7 @@
             --accent: #58a6ff;
             --green: #3fb950;
             --purple: #a371f7;
+            --orange: #d29922;
         }
 
         * {
@@ -191,6 +192,66 @@
             color: var(--text-muted);
         }
 
+        .tier-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--card);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .tier-table th,
+        .tier-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tier-table th {
+            background: var(--bg);
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .tier-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .tier-table code {
+            background: var(--bg);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .commands-list {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .command-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .command-item:last-child {
+            border-bottom: none;
+        }
+
+        .command-item code {
+            color: var(--green);
+            font-weight: 600;
+        }
+
+        .command-item p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
         .cta {
             text-align: center;
             margin: 4rem 0;
@@ -230,6 +291,36 @@
             color: var(--accent);
             text-decoration: none;
         }
+
+        .pointer-example {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.9rem;
+            margin: 1rem 0;
+        }
+
+        .pointer-example .fw-tag {
+            color: var(--purple);
+        }
+
+        .pointer-example .fw-cmd {
+            color: var(--text);
+        }
+
+        .pointer-example .fw-exit {
+            color: var(--orange);
+        }
+
+        .pointer-example .fw-size {
+            color: var(--text-muted);
+        }
+
+        .pointer-example .fw-open {
+            color: var(--green);
+        }
     </style>
 </head>
 <body>
@@ -246,8 +337,8 @@
                 <div class="stat-label">Token Savings</div>
             </div>
             <div class="stat">
-                <div class="stat-value">21.3k</div>
-                <div class="stat-label">Tokens Saved per Session</div>
+                <div class="stat-value">~35</div>
+                <div class="stat-label">Tokens per Pointer</div>
             </div>
             <div class="stat">
                 <div class="stat-value">0</div>
@@ -262,27 +353,77 @@
         </div>
 
         <section>
+            <h2>The Problem</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">AI coding agents hit a wall when tool outputs bloat your context. One big test run or log dump eats thousands of tokens that sit there forever. After context summarization, Claude forgets the details you need.</p>
+        </section>
+
+        <section>
+            <h2>The Solution: Tiered Offloading</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">FewWord implements <strong>dynamic context discovery</strong> — using the filesystem as infinite, searchable memory.</p>
+
+            <table class="tier-table">
+                <thead>
+                    <tr>
+                        <th>Output Size</th>
+                        <th>What Happens</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>&lt; 512B</code></td>
+                        <td>Shown inline (normal behavior)</td>
+                    </tr>
+                    <tr>
+                        <td><code>512B - 4KB</code></td>
+                        <td>Compact pointer only (~35 tokens)</td>
+                    </tr>
+                    <tr>
+                        <td><code>&gt; 4KB</code></td>
+                        <td>Compact pointer + tail preview (failures only)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>Ultra-Compact Pointers</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">Instead of 26,000 tokens of command output, you get ~35 tokens:</p>
+
+            <div class="pointer-example">
+                <span class="fw-tag">[fw A1B2C3D4]</span> <span class="fw-cmd">pytest</span> <span class="fw-exit">e=0</span> <span class="fw-size">45K 882L</span> | <span class="fw-open">/context-open A1B2C3D4</span>
+            </div>
+
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">For failures, you also get a preview of the last 5 lines:</p>
+
+            <div class="pointer-example">
+                <span class="fw-tag">[fw E5F6G7H8]</span> <span class="fw-cmd">pytest</span> <span class="fw-exit">e=1</span> <span class="fw-size">45K 234L</span> | <span class="fw-open">/context-open E5F6G7H8</span><br>
+                <span style="color: var(--text-muted);">FAILED test_auth.py::test_login - AssertionError<br>
+                FAILED test_api.py::test_endpoint - TimeoutError<br>
+                2 failed, 48 passed in 12.34s</span>
+            </div>
+        </section>
+
+        <section>
             <h2>Before & After</h2>
             <div class="comparison">
                 <div class="comparison-box before">
                     <h3>Without FewWord</h3>
                     <pre>You: Run the test suite
-Claude: [15,000 tokens of output in context]
+Claude: [26,000 tokens of output]
 You: Fix the auth bug
-Claude: [still carrying 15,000 tokens]
+Claude: [still carrying 26k tokens]
 You: What tests failed?
-Claude: [context summarized, details lost]</pre>
+Claude: [context compacted, details lost]</pre>
                 </div>
                 <div class="comparison-box after">
                     <h3>With FewWord</h3>
                     <pre>You: Run the test suite
-Claude: [Output → .fewword/scratch/pytest.txt]
-        Size: 45KB, Exit: 1
-        Last 10 lines: FAILED auth_test...
+Claude: [fw A1B2] pytest e=1 45K 234L
+        FAILED test_auth... (~35 tokens)
 You: Fix the auth bug
 Claude: [clean context, full output on disk]
 You: What tests failed?
-Claude: grep FAILED .fewword/scratch/pytest.txt</pre>
+Claude: /context-open A1B2</pre>
                 </div>
             </div>
         </section>
@@ -291,22 +432,97 @@ Claude: grep FAILED .fewword/scratch/pytest.txt</pre>
             <h2>Features</h2>
             <div class="features">
                 <div class="feature">
-                    <h3>Auto Offload</h3>
-                    <p>Large outputs (>8KB) automatically saved to disk. Smart preview with first/last 10 lines stays in context.</p>
+                    <h3>Tiered Offloading</h3>
+                    <p>Small outputs inline, medium get compact pointer, large failures get preview. Smart thresholds minimize context while preserving actionable info.</p>
+                </div>
+                <div class="feature">
+                    <h3>Smart Retention</h3>
+                    <p>Success outputs retained 24h, failures 48h (you might need those error logs). LRU eviction at 250MB keeps disk tidy.</p>
+                </div>
+                <div class="feature">
+                    <h3>Session Stats</h3>
+                    <p>Track your savings with <code>/fewword-stats</code>. See outputs intercepted, bytes offloaded, and estimated tokens saved per session.</p>
                 </div>
                 <div class="feature">
                     <h3>Privacy First</h3>
                     <p>Only logs tool names and parameter keys. Never logs your actual data, secrets, or command arguments.</p>
                 </div>
                 <div class="feature">
-                    <h3>Auto Cleanup</h3>
-                    <p>Stale outputs cleaned on session start. No manual maintenance needed.</p>
+                    <h3>LATEST Aliases</h3>
+                    <p>Quick retrieval with <code>LATEST.txt</code> and <code>LATEST_{cmd}.txt</code> symlinks. No need to remember IDs.</p>
                 </div>
                 <div class="feature">
-                    <h3>MCP Aware</h3>
-                    <p>Intercepts MCP tools, clamps pagination to prevent runaway queries. Your browser automation stays efficient.</p>
+                    <h3>Zero Config</h3>
+                    <p>Works automatically after installation. No setup, no configuration files. Just install and go.</p>
                 </div>
             </div>
+        </section>
+
+        <section>
+            <h2>Commands</h2>
+            <div class="commands-list">
+                <div class="command-item">
+                    <code>/context-open &lt;id&gt;</code>
+                    <p>Retrieve an offloaded output by its ID</p>
+                </div>
+                <div class="command-item">
+                    <code>/context-recent</code>
+                    <p>Show recent offloaded outputs — primary recovery path after context compaction</p>
+                </div>
+                <div class="command-item">
+                    <code>/fewword-stats</code>
+                    <p>Show session statistics and estimated token savings</p>
+                </div>
+                <div class="command-item">
+                    <code>/context-pin &lt;id&gt;</code>
+                    <p>Pin an output to prevent auto-cleanup</p>
+                </div>
+                <div class="command-item">
+                    <code>/context-search &lt;term&gt;</code>
+                    <p>Search through all offloaded context files</p>
+                </div>
+                <div class="command-item">
+                    <code>/fewword-help</code>
+                    <p>Show detailed help and documentation</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Configuration</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">FewWord works out of the box, but power users can customize via environment variables:</p>
+
+            <table class="tier-table">
+                <thead>
+                    <tr>
+                        <th>Variable</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>FEWWORD_INLINE_MAX</code></td>
+                        <td>512</td>
+                        <td>Below this: show inline</td>
+                    </tr>
+                    <tr>
+                        <td><code>FEWWORD_PREVIEW_MIN</code></td>
+                        <td>4096</td>
+                        <td>Above this: add preview (failures)</td>
+                    </tr>
+                    <tr>
+                        <td><code>FEWWORD_SHOW_PATH</code></td>
+                        <td>0</td>
+                        <td>Set to 1 to show file path in pointer</td>
+                    </tr>
+                    <tr>
+                        <td><code>FEWWORD_DISABLE</code></td>
+                        <td>0</td>
+                        <td>Set to 1 to disable offloading</td>
+                    </tr>
+                </tbody>
+            </table>
         </section>
 
         <div class="cta">
@@ -316,7 +532,7 @@ Claude: grep FAILED .fewword/scratch/pytest.txt</pre>
 
         <footer>
             <p>Built by <a href="https://github.com/sheeki03">Sheeki</a> &bull; MIT License</p>
-            <p style="margin-top: 0.5rem;">Inspired by context engineering research from Cursor, LangChain, and Manus</p>
+            <p style="margin-top: 0.5rem;">Inspired by context engineering research from <a href="https://blog.langchain.com/how-agents-can-use-filesystems-for-context-engineering/">LangChain</a> and <a href="https://manus.im/blog/Context-Engineering-for-AI-Agents-Lessons-from-Building-Manus">Manus</a></p>
         </footer>
     </div>
 </body>

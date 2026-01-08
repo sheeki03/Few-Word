@@ -33,25 +33,17 @@ FewWord implements **dynamic context discovery** — patterns from [Manus](https
 [26,000 tokens of command outputs sitting in context forever]
 ```
 
-**You get this:**
+**You get this (~35 tokens):**
 ```
-=== [FewWord: Output offloaded] ===
-File: .fewword/scratch/tool_outputs/find_143022_a1b2c3d4.txt
-Size: 15534 bytes, 882 lines
-Exit: 0
+[fw A1B2C3D4] find e=0 15K 882L | /context-open A1B2C3D4
+```
 
-=== First 10 lines ===
-/usr/bin/uux
-/usr/bin/cpan
-...
-
-=== Last 10 lines ===
-/usr/bin/gunzip
-...
-
-=== Retrieval commands ===
-  Full: cat .fewword/scratch/tool_outputs/find_143022_a1b2c3d4.txt
-  Grep: grep 'pattern' .fewword/scratch/tool_outputs/find_143022_a1b2c3d4.txt
+For failures, you also get a preview:
+```
+[fw E5F6G7H8] pytest e=1 45K 234L | /context-open E5F6G7H8
+FAILED test_auth.py::test_login - AssertionError
+FAILED test_api.py::test_endpoint - TimeoutError
+2 failed, 48 passed in 12.34s
 ```
 
 ---
@@ -94,7 +86,7 @@ Exit: 0
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Result**: 45KB output → ~200 tokens in context + full data on disk when needed.
+**Result**: 45KB output → ~35 tokens in context + full data on disk when needed.
 
 ---
 
@@ -142,6 +134,10 @@ claude plugin install fewword@sheeki03-Few-Word
 | Command | What It Does |
 |---------|--------------|
 | `/fewword-help` | Show detailed help and how the plugin works |
+| `/fewword-stats` | Show session statistics and estimated token savings |
+| `/context-open <id>` | Retrieve an offloaded output by ID |
+| `/context-recent` | Show recent offloaded outputs (recovery after compaction) |
+| `/context-pin <id>` | Pin an output to prevent auto-cleanup |
 | `/context-init` | Set up FewWord directory structure |
 | `/context-cleanup` | See storage stats, clean old files |
 | `/context-search <term>` | Search through all offloaded context |
@@ -154,16 +150,18 @@ claude plugin install fewword@sheeki03-Few-Word
 
 | Feature | What Happens |
 |---------|--------------|
-| **Bash Output Offloading** | Large outputs (>8KB) → written to file, pointer + preview returned. Small outputs → shown normally. |
+| **Tiered Offloading** | < 512B: inline. 512B-4KB: compact pointer (~35 tokens). > 4KB: pointer + preview (failures only). |
+| **Smart Retention** | Exit 0 (success) → 24h retention. Exit != 0 (failure) → 48h retention. LRU eviction at 250MB. |
+| **LATEST Aliases** | `LATEST.txt` and `LATEST_{cmd}.txt` symlinks for quick retrieval |
+| **Session Tracking** | Per-session stats for `/fewword-stats` |
 | **Plan Persistence** | Active plan in `.fewword/index/current_plan.yaml`, auto-archived on completion |
-| **Auto-cleanup** | Old scratch files deleted on session start (>60min for outputs, >120min for subagents) |
 
 ### Hook Events
 
 | Event | Action |
 |-------|--------|
-| **SessionStart** | Creates directories, cleans stale files, updates .gitignore |
-| **PreToolUse** | Intercepts Bash commands, wraps large outputs |
+| **SessionStart** | Creates directories, runs smart cleanup (TTL + LRU), shows inventory, updates .gitignore |
+| **PreToolUse** | Intercepts Bash commands, wraps large outputs, writes manifest, creates LATEST aliases |
 | **SessionEnd** | Archives completed plans |
 | **Stop** | Warns if scratch storage exceeds 100MB |
 
@@ -174,14 +172,20 @@ claude plugin install fewword@sheeki03-Few-Word
 ```
 your-project/
 └── .fewword/
-    ├── scratch/                     # Ephemeral (auto-cleaned)
-    │   ├── tool_outputs/            # Command outputs (cleaned >60min)
-    │   └── subagents/               # Agent workspaces (cleaned >120min)
-    ├── memory/                      # Persistent
+    ├── scratch/                     # Ephemeral (auto-cleaned by TTL + LRU)
+    │   ├── tool_outputs/            # Command outputs (24h success, 48h failure)
+    │   │   ├── LATEST.txt           # Symlink to most recent output
+    │   │   ├── LATEST_{cmd}.txt     # Symlink to most recent per command
+    │   │   └── {cmd}_{ts}_{id}_exit{code}.txt
+    │   └── subagents/               # Agent workspaces
+    ├── memory/                      # Persistent (never auto-cleaned)
     │   ├── plans/                   # Archived completed plans
+    │   ├── pinned/                  # Pinned outputs (via /context-pin)
     │   └── history/                 # Archived sessions
-    ├── index/                       # Metadata (never auto-cleaned)
-    │   └── current_plan.yaml        # Active plan
+    ├── index/                       # Metadata
+    │   ├── session.json             # Current session ID
+    │   ├── current_plan.yaml        # Active plan
+    │   └── tool_outputs.jsonl       # Append-only manifest
     └── DISABLE_OFFLOAD              # Escape hatch file
 ```
 
@@ -217,15 +221,37 @@ The plugin conservatively skips these commands:
 
 ## Configuration
 
-### Defaults (v1)
+### Defaults (v1.3)
 
 | Setting | Value |
 |---------|-------|
-| Size threshold | 8KB (~2000 tokens) |
-| Preview lines | 10 (first + last) |
-| Tool output retention | 60 minutes |
-| Subagent retention | 120 minutes |
-| Scratch size warning | 100MB |
+| Inline threshold | 512B (outputs below this shown inline) |
+| Preview threshold | 4KB (outputs above this get tail preview on failure) |
+| Preview lines | 5 (tail only, for failures) |
+| Success retention (exit 0) | 24 hours |
+| Failure retention (exit != 0) | 48 hours |
+| Scratch max size | 250MB (LRU eviction) |
+
+### Environment Variable Overrides
+
+```bash
+# Tiered offloading thresholds
+FEWWORD_INLINE_MAX=512              # Below this: show inline
+FEWWORD_PREVIEW_MIN=4096            # Above this: add preview (failures only)
+FEWWORD_PREVIEW_LINES=5             # Max preview lines
+
+# Pointer customization
+FEWWORD_OPEN_CMD=/context-open      # Command shown in pointer
+FEWWORD_SHOW_PATH=1                 # Append file path to pointer
+FEWWORD_VERBOSE_POINTER=1           # Use old verbose format (v2.0 style)
+
+# Retention settings
+FEWWORD_RETENTION_SUCCESS_MIN=1440  # 24h default
+FEWWORD_RETENTION_FAIL_MIN=2880     # 48h default
+FEWWORD_SCRATCH_MAX_MB=250          # LRU cap
+```
+
+> **Note:** Longer retention keeps command outputs on disk longer. If you work with sensitive data, consider lowering TTLs via environment variables or adding `.fewword/scratch/` to your backup exclusions.
 
 ---
 
