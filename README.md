@@ -129,12 +129,31 @@ claude plugin install fewword@sheeki03-Few-Word
 
 ---
 
+## Updates
+
+FewWord checks for updates automatically on session start and notifies you if a new version is available.
+
+**To update manually:**
+
+```bash
+claude plugin update fewword@sheeki03-Few-Word
+```
+
+Then start a new session for hooks to reload.
+
+**Check your version:** `/fewword-version`
+
+**Disable update checks:** `export FEWWORD_DISABLE_UPDATE_CHECK=1`
+
+---
+
 ## Commands
 
 | Command | What It Does |
 |---------|--------------|
 | `/fewword-help` | Show detailed help and how the plugin works |
 | `/fewword-stats` | Show session statistics and estimated token savings |
+| `/fewword-version` | Show installed version and update command |
 | `/context-open <id>` | Retrieve an offloaded output by ID |
 | `/context-recent` | Show recent offloaded outputs (recovery after compaction) |
 | `/context-pin <id>` | Pin an output to prevent auto-cleanup |

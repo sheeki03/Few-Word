@@ -485,7 +485,20 @@ Claude: /context-open A1B2</pre>
                     <code>/fewword-help</code>
                     <p>Show detailed help and documentation</p>
                 </div>
+                <div class="command-item">
+                    <code>/fewword-version</code>
+                    <p>Show installed version and check for updates</p>
+                </div>
             </div>
+        </section>
+
+        <section>
+            <h2>Updates</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">FewWord checks for updates automatically on session start and notifies you if a new version is available.</p>
+
+            <div class="install-cmd" style="margin-bottom: 1rem;">claude plugin update fewword@sheeki03-Few-Word</div>
+
+            <p style="color: var(--text-muted);">Then start a new session for hooks to reload. Disable auto-check with <code>FEWWORD_DISABLE_UPDATE_CHECK=1</code></p>
         </section>
 
         <section>
