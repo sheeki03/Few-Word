@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'mkdir -p .fewword/{scratch/{tool_outputs,subagents},memory/{plans,history,patterns,pinned},index} 2>/dev/null; if [ -d .git ] && ! grep -q \".fewword/scratch\" .gitignore 2>/dev/null; then echo -e \"\\n# FewWord context plugin\\n.fewword/scratch/\\n.fewword/index/\" >> .gitignore 2>/dev/null && echo \"[fewword] Added to .gitignore\"; fi'"
+            "command": "bash -c 'mkdir -p .fewword/{scratch/{tool_outputs,subagents},memory/{plans,history,patterns,pinned},index} 2>/dev/null; if [ -d .git ] && ! grep -qE \"^\\.fewword(/|$)\" .gitignore 2>/dev/null; then echo -e \"\\n# FewWord context plugin\\n.fewword/scratch/\\n.fewword/index/\" >> .gitignore 2>/dev/null && echo \"[fewword] Added to .gitignore\"; fi'"
           },
           {
             "type": "command",

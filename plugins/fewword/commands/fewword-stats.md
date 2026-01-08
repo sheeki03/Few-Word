@@ -59,7 +59,7 @@ Show statistics about offloaded outputs for the current session, including estim
 
    # Format bytes
    if [ "$total_bytes" -ge 1048576 ]; then
-     size_str="$((total_bytes / 1048576)).$((total_bytes % 1048576 / 104858))MB"
+     size_str="$((total_bytes / 1048576)).$((total_bytes % 1048576 * 10 / 1048576))MB"
    elif [ "$total_bytes" -ge 1024 ]; then
      size_str="$((total_bytes / 1024))KB"
    else

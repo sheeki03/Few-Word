@@ -142,10 +142,11 @@ def generate_wrapper(original_cmd: str, output_dir: str, safe_cmd: str,
     2. INLINE_MAX - PREVIEW_MIN (512B-4KB): Compact pointer only
     3. > PREVIEW_MIN (4KB+): Compact pointer + preview (failures only)
     """
-    # Escape paths for shell
+    # Escape paths and values for shell (single-quote safe)
     escaped_dir = output_dir.replace("'", "'\"'\"'")
     escaped_cwd = cwd.replace("'", "'\"'\"'")
     escaped_open_cmd = OPEN_CMD.replace("'", "'\"'\"'")
+    escaped_session = session_id.replace("'", "'\"'\"'")
 
     wrapper = f'''
 set -o pipefail
@@ -155,7 +156,7 @@ __fw_cwd='{escaped_cwd}'
 __fw_cmd='{safe_cmd}'
 __fw_ts='{timestamp}'
 __fw_id='{event_id}'
-__fw_session='{session_id}'
+__fw_session='{escaped_session}'
 __fw_open_cmd='{escaped_open_cmd}'
 __fw_manifest="$__fw_cwd/.fewword/index/tool_outputs.jsonl"
 

@@ -14,18 +14,24 @@ The user will provide an ID after invoking this command, e.g., `/context-open A1
 
 1. Get the ID from the user's command (the argument after `/context-open`)
 
-2. Look up the ID in the manifest:
+2. Validate and look up the ID in the manifest:
    ```bash
    id="$1"  # The ID provided by user
    manifest=".fewword/index/tool_outputs.jsonl"
+
+   # Validate ID is 8-character hex (prevents grep injection)
+   if ! echo "$id" | grep -qE '^[0-9A-Fa-f]{8}$'; then
+     echo "Error: Invalid ID format. Expected 8-character hex (e.g., A1B2C3D4)"
+     exit 1
+   fi
 
    if [ ! -f "$manifest" ]; then
      echo "Error: No manifest found. Run a command first to create offloaded outputs."
      exit 1
    fi
 
-   # Find the offload entry for this ID (case insensitive)
-   entry=$(grep -i "\"id\":\"$id\"" "$manifest" | grep '"type":"offload"' | tail -1)
+   # Find the offload entry for this ID (case insensitive, fixed-string match)
+   entry=$(grep -iF "\"id\":\"$id\"" "$manifest" | grep '"type":"offload"' | tail -1)
 
    if [ -z "$entry" ]; then
      echo "Error: ID '$id' not found in manifest"

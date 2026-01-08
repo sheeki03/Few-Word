@@ -14,18 +14,24 @@ Pin an offloaded output to permanent storage. Pinned files are never auto-delete
 
 1. Parse the ID argument (user provides it after invoking this command)
 
-2. Find the file in manifest:
+2. Validate and find the file in manifest:
    ```bash
    id="$1"  # The ID provided by user
    manifest=".fewword/index/tool_outputs.jsonl"
+
+   # Validate ID is 8-character hex (prevents grep injection)
+   if ! echo "$id" | grep -qE '^[0-9A-Fa-f]{8}$'; then
+     echo "Error: Invalid ID format. Expected 8-character hex (e.g., A1B2C3D4)"
+     exit 1
+   fi
 
    if [ ! -f "$manifest" ]; then
      echo "Error: No manifest found. Nothing to pin."
      exit 1
    fi
 
-   # Find the offload entry for this ID
-   entry=$(grep "\"id\":\"$id\"" "$manifest" | grep '"type":"offload"' | tail -1)
+   # Find the offload entry for this ID (fixed-string match)
+   entry=$(grep -iF "\"id\":\"$id\"" "$manifest" | grep '"type":"offload"' | tail -1)
 
    if [ -z "$entry" ]; then
      echo "Error: ID '$id' not found in manifest"
@@ -52,7 +58,10 @@ Pin an offloaded output to permanent storage. Pinned files are never auto-delete
    filename=$(basename "$path")
    dest=".fewword/memory/pinned/$filename"
 
-   mv "$path" "$dest"
+   if ! mv "$path" "$dest"; then
+     echo "Error: Failed to move file to pinned storage"
+     exit 1
+   fi
    echo "Pinned: $path -> $dest"
    ```
 
