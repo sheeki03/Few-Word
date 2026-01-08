@@ -10,9 +10,54 @@
 
 A Claude Code plugin that automatically offloads large command outputs to files, keeping your context clean and retrievable.
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blueviolet)](https://claude.ai/claude-code)
+
 ---
 
-## Actual Test Results
+## How It Works
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Claude Code Session                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│   You: "Run the test suite"                                     │
+│                              │                                   │
+│                              ▼                                   │
+│   ┌──────────────────────────────────────────┐                  │
+│   │  PreToolUse Hook Intercepts              │                  │
+│   │  ─────────────────────────               │                  │
+│   │  Command: pytest                         │                  │
+│   │  Output: 45,678 bytes (>8KB threshold)   │                  │
+│   └──────────────────────────────────────────┘                  │
+│                              │                                   │
+│              ┌───────────────┴───────────────┐                  │
+│              ▼                               ▼                   │
+│   ┌─────────────────────┐      ┌─────────────────────────┐      │
+│   │  📁 Write to Disk   │      │  📋 Return to Context   │      │
+│   │  ─────────────────  │      │  ────────────────────   │      │
+│   │  .fewword/scratch/  │      │  File: pytest_143022.txt│      │
+│   │  tool_outputs/      │      │  Size: 45KB, Exit: 1    │      │
+│   │  pytest_143022.txt  │      │  === Last 10 lines ===  │      │
+│   │                     │      │  FAILED auth_test...    │      │
+│   │  [Full 45KB output] │      │  [~200 tokens only]     │      │
+│   └─────────────────────┘      └─────────────────────────┘      │
+│                                                                  │
+│   Later: "What tests failed?"                                   │
+│                              │                                   │
+│                              ▼                                   │
+│   Claude: grep FAILED .fewword/scratch/tool_outputs/pytest.txt  │
+│           → Retrieves exactly what's needed                     │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Result**: 45KB output → ~200 tokens in context + full data on disk when needed.
+
+---
+
+## Test Results
 
 We ran the same 3 commands (`find`, `ls -la`, `env`) in two fresh Claude Code sessions:
 
@@ -54,7 +99,7 @@ AI coding agents hit a wall when:
 
 ## The Solution
 
-FewWord implements **dynamic context discovery** — patterns from [Cursor](https://cursor.com/blog/dynamic-context-discovery) and [LangChain](https://blog.langchain.com/how-agents-can-use-filesystems-for-context-engineering/) that use the filesystem as infinite, searchable memory.
+FewWord implements **dynamic context discovery** — patterns from [Manus](https://manus.im/blog/Context-Engineering-for-AI-Agents-Lessons-from-Building-Manus) and [LangChain](https://blog.langchain.com/how-agents-can-use-filesystems-for-context-engineering/) that use the filesystem as infinite, searchable memory.
 
 **Instead of this:**
 ```
@@ -242,14 +287,6 @@ FewWord intercepts MCP tool calls (`mcp__*`) for two purposes:
 ```
 
 Your actual query strings, repo names, and other sensitive values are **never logged**.
-
----
-
-## Credits & References
-
-Based on research and patterns from:
-- [LangChain: How Agents Can Use Filesystems](https://blog.langchain.com/how-agents-can-use-filesystems-for-context-engineering/)
-- [Manus: Context Engineering for AI Agents](https://manus.im/blog/Context-Engineering-for-AI-Agents-Lessons-from-Building-Manus)
 
 ---
 

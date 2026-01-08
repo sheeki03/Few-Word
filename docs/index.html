@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FewWord - Context Engineering for Claude Code</title>
+    <meta name="description" content="Save 82% of message tokens. Automatically offload large outputs to filesystem.">
+    <style>
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --border: #30363d;
+            --text: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --green: #3fb950;
+            --purple: #a371f7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 4rem 0;
+        }
+
+        .banner {
+            max-width: 500px;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .tagline {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-bottom: 2rem;
+        }
+
+        .stats {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+        }
+
+        .stat {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--green);
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .install-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+
+        .install-box h2 {
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+
+        .install-cmd {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 1rem;
+            display: inline-block;
+            margin: 1rem 0;
+        }
+
+        .install-cmd::before {
+            content: '$ ';
+            color: var(--text-muted);
+        }
+
+        section {
+            margin: 3rem 0;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .feature {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .feature h3 {
+            color: var(--purple);
+            margin-bottom: 0.5rem;
+        }
+
+        .feature p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        @media (max-width: 600px) {
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .comparison-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .comparison-box h3 {
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        .comparison-box.before h3 {
+            color: #f85149;
+        }
+
+        .comparison-box.after h3 {
+            color: var(--green);
+        }
+
+        pre {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 1rem;
+            overflow-x: auto;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .cta {
+            text-align: center;
+            margin: 4rem 0;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--accent);
+            color: var(--bg);
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin: 0.5rem;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background: var(--card);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            margin-top: 4rem;
+        }
+
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img src="banner.png" alt="Kevin Malone - Why waste time say lot word when few word do trick?" class="banner">
+            <h1>FewWord</h1>
+            <p class="tagline">"Big output go file. Small word stay. Context happy."</p>
+        </header>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value">82%</div>
+                <div class="stat-label">Token Savings</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">21.3k</div>
+                <div class="stat-label">Tokens Saved per Session</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">0</div>
+                <div class="stat-label">Configuration Required</div>
+            </div>
+        </div>
+
+        <div class="install-box">
+            <h2>Install in 10 seconds</h2>
+            <div class="install-cmd">claude plugin install fewword@sheeki03-Few-Word</div>
+            <p style="color: var(--text-muted); margin-top: 1rem;">Start a new session after installation. That's it.</p>
+        </div>
+
+        <section>
+            <h2>Before & After</h2>
+            <div class="comparison">
+                <div class="comparison-box before">
+                    <h3>Without FewWord</h3>
+                    <pre>You: Run the test suite
+Claude: [15,000 tokens of output in context]
+You: Fix the auth bug
+Claude: [still carrying 15,000 tokens]
+You: What tests failed?
+Claude: [context summarized, details lost]</pre>
+                </div>
+                <div class="comparison-box after">
+                    <h3>With FewWord</h3>
+                    <pre>You: Run the test suite
+Claude: [Output → .fewword/scratch/pytest.txt]
+        Size: 45KB, Exit: 1
+        Last 10 lines: FAILED auth_test...
+You: Fix the auth bug
+Claude: [clean context, full output on disk]
+You: What tests failed?
+Claude: grep FAILED .fewword/scratch/pytest.txt</pre>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Features</h2>
+            <div class="features">
+                <div class="feature">
+                    <h3>Auto Offload</h3>
+                    <p>Large outputs (>8KB) automatically saved to disk. Smart preview with first/last 10 lines stays in context.</p>
+                </div>
+                <div class="feature">
+                    <h3>Privacy First</h3>
+                    <p>Only logs tool names and parameter keys. Never logs your actual data, secrets, or command arguments.</p>
+                </div>
+                <div class="feature">
+                    <h3>Auto Cleanup</h3>
+                    <p>Stale outputs cleaned on session start. No manual maintenance needed.</p>
+                </div>
+                <div class="feature">
+                    <h3>MCP Aware</h3>
+                    <p>Intercepts MCP tools, clamps pagination to prevent runaway queries. Your browser automation stays efficient.</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="cta">
+            <a href="https://github.com/sheeki03/Few-Word" class="btn">View on GitHub</a>
+            <a href="https://github.com/sheeki03/Few-Word#installation" class="btn btn-secondary">Documentation</a>
+        </div>
+
+        <footer>
+            <p>Built by <a href="https://github.com/sheeki03">Sheeki</a> &bull; MIT License</p>
+            <p style="margin-top: 0.5rem;">Inspired by context engineering research from Cursor, LangChain, and Manus</p>
+        </footer>
+    </div>
+</body>
+</html>
