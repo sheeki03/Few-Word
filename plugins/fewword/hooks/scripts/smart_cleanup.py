@@ -22,10 +22,17 @@ from pathlib import Path
 from datetime import datetime
 
 
-# === Configuration (env var overrides) ===
-RETENTION_SUCCESS_MIN = int(os.environ.get('FEWWORD_RETENTION_SUCCESS_MIN', 1440))  # 24h
-RETENTION_FAIL_MIN = int(os.environ.get('FEWWORD_RETENTION_FAIL_MIN', 2880))        # 48h
-SCRATCH_MAX_MB = int(os.environ.get('FEWWORD_SCRATCH_MAX_MB', 250))
+# === Configuration (env var overrides, with safe fallbacks) ===
+def _safe_int(env_var: str, default: int) -> int:
+    """Parse env var as int with fallback on invalid input."""
+    try:
+        return int(os.environ.get(env_var, default))
+    except ValueError:
+        return default
+
+RETENTION_SUCCESS_MIN = _safe_int('FEWWORD_RETENTION_SUCCESS_MIN', 1440)  # 24h
+RETENTION_FAIL_MIN = _safe_int('FEWWORD_RETENTION_FAIL_MIN', 2880)        # 48h
+SCRATCH_MAX_MB = _safe_int('FEWWORD_SCRATCH_MAX_MB', 250)
 MIN_KEEP_FILES = 1  # Always keep at least this many newest files
 
 # Strict pattern for real offload output files
@@ -205,7 +212,7 @@ def cleanup_scratch(cwd: str = None, verbose: bool = False):
         files.sort(key=lambda x: x['mtime'])
 
         while total_size_mb > SCRATCH_MAX_MB and len(files) > MIN_KEEP_FILES:
-            oldest = files.pop(0)
+            oldest = files[0]
             try:
                 oldest['path'].unlink()
                 file_id = extract_id_from_filename(oldest['filename'])
@@ -214,10 +221,12 @@ def cleanup_scratch(cwd: str = None, verbose: bool = False):
                 deleted_count += 1
                 deleted_bytes += oldest['size']
                 total_size_mb -= oldest['size'] / (1024 * 1024)
+                files.pop(0)  # Only remove from list after successful delete
                 if verbose:
                     print(f"[fewword] Deleted (LRU): {oldest['filename']}")
             except OSError:
-                pass
+                # Can't delete this file, stop LRU eviction to avoid infinite loop
+                break
 
     if verbose or deleted_count > 0:
         remaining = len(files)

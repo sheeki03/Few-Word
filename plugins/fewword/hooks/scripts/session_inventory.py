@@ -78,13 +78,13 @@ def parse_file_brief(filepath: Path) -> dict | None:
 
 
 def get_latest_aliases(scratch_dir: Path) -> set:
-    """Get set of commands that have LATEST aliases."""
+    """Get set of commands that have LATEST aliases (truncated to match cmd display)."""
     aliases = set()
     for filepath in scratch_dir.iterdir():
-        if filepath.name.startswith('LATEST_') and filepath.name.endswith('.txt'):
-            # Extract command from LATEST_{cmd}.txt
+        if filepath.is_file() and filepath.name.startswith('LATEST_') and filepath.name.endswith('.txt'):
+            # Extract command from LATEST_{cmd}.txt, truncate to match cmd[:10] display
             cmd = filepath.name[7:-4]  # Remove "LATEST_" and ".txt"
-            aliases.add(cmd)
+            aliases.add(cmd[:10])  # Truncate to match parse_file_brief cmd[:10]
     return aliases
 
 

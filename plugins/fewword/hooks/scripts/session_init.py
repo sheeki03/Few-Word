@@ -12,7 +12,7 @@ import os
 import json
 import uuid
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def main():
@@ -26,7 +26,7 @@ def main():
 
     # Generate new session ID
     session_id = uuid.uuid4().hex[:12]
-    started_at = datetime.utcnow().isoformat() + 'Z'
+    started_at = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
 
     session_data = {
         'session_id': session_id,
@@ -53,7 +53,7 @@ def get_session_id() -> str | None:
     try:
         with open(session_file, 'r') as f:
             data = json.load(f)
-            return data.get('session_id')
+            return data.get('session_id') if isinstance(data, dict) else None
     except (OSError, json.JSONDecodeError):
         return None
 

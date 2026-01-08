@@ -24,10 +24,17 @@ from pathlib import Path
 from datetime import datetime
 
 
-# === Configuration (env var overridable) ===
-INLINE_MAX = int(os.environ.get('FEWWORD_INLINE_MAX', 512))      # < this: show inline
-PREVIEW_MIN = int(os.environ.get('FEWWORD_PREVIEW_MIN', 4096))   # > this: add preview
-PREVIEW_LINES = int(os.environ.get('FEWWORD_PREVIEW_LINES', 5))  # max preview lines
+# === Configuration (env var overridable, with safe fallbacks) ===
+def _safe_int(env_var: str, default: int) -> int:
+    """Parse env var as int with fallback on invalid input."""
+    try:
+        return int(os.environ.get(env_var, default))
+    except ValueError:
+        return default
+
+INLINE_MAX = _safe_int('FEWWORD_INLINE_MAX', 512)      # < this: show inline
+PREVIEW_MIN = _safe_int('FEWWORD_PREVIEW_MIN', 4096)   # > this: add preview
+PREVIEW_LINES = _safe_int('FEWWORD_PREVIEW_LINES', 5)  # max preview lines
 PREVIEW_LINE_MAX = 200  # truncate long preview lines
 OPEN_CMD = os.environ.get('FEWWORD_OPEN_CMD', '/context-open')   # retrieval command
 SHOW_PATH = os.environ.get('FEWWORD_SHOW_PATH', '0') == '1'      # append path to pointer
@@ -139,9 +146,6 @@ def generate_wrapper(original_cmd: str, output_dir: str, safe_cmd: str,
     escaped_dir = output_dir.replace("'", "'\"'\"'")
     escaped_cwd = cwd.replace("'", "'\"'\"'")
     escaped_open_cmd = OPEN_CMD.replace("'", "'\"'\"'")
-
-    # Relative path for manifest and optional display
-    rel_path = f".fewword/scratch/tool_outputs/{safe_cmd}_{timestamp}_{event_id}"
 
     wrapper = f'''
 set -o pipefail
