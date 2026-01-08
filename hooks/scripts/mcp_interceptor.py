@@ -3,7 +3,7 @@
 PreToolUse hook for MCP tools: logging + pagination clamping.
 
 This hook:
-1. Logs sanitized metadata to .fsctx/index/mcp_metadata.jsonl
+1. Logs sanitized metadata to .fewword/index/mcp_metadata.jsonl
 2. Clamps pagination parameters to prevent excessive results
 
 NOTE: Does NOT use permissionDecision: "ask" (VS Code extension ignores it).
@@ -35,7 +35,7 @@ def is_disabled(cwd: str) -> bool:
     """Check if offloading is disabled via env var or file."""
     if os.environ.get('FEWWORD_DISABLE'):
         return True
-    disable_file = Path(cwd) / '.fsctx' / 'DISABLE_OFFLOAD'
+    disable_file = Path(cwd) / '.fewword' / 'DISABLE_OFFLOAD'
     if disable_file.exists():
         return True
     return False
@@ -48,7 +48,7 @@ def log_metadata(cwd: str, session_id: str, tool_name: str, tool_input: dict):
     Privacy-safe: logs only tool name, input keys, coarse metrics.
     Does NOT log raw argument values (may contain secrets).
     """
-    index_file = Path(cwd) / '.fsctx' / 'index' / 'mcp_metadata.jsonl'
+    index_file = Path(cwd) / '.fewword' / 'index' / 'mcp_metadata.jsonl'
 
     try:
         index_file.parent.mkdir(parents=True, exist_ok=True)

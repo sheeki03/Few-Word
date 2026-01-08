@@ -11,7 +11,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-SCRATCH_DIR = Path(".fsctx/scratch/tool_outputs")
+SCRATCH_DIR = Path(".fewword/scratch/tool_outputs")
 TOKEN_THRESHOLD = 2000  # ~500 words
 
 def estimate_tokens(text: str) -> int:
@@ -46,7 +46,7 @@ def handle_tool_output(tool_name: str, output: str) -> str:
 # For shell command outputs
 output=$(some_command 2>&1)
 if [ ${#output} -gt 8000 ]; then
-  file=".fsctx/scratch/tool_outputs/cmd_$(date +%s).txt"
+  file=".fewword/scratch/tool_outputs/cmd_$(date +%s).txt"
   mkdir -p "$(dirname "$file")"
   echo "$output" > "$file"
   echo "[Output saved to $file. Lines: $(echo "$output" | wc -l)]"
@@ -60,7 +60,7 @@ fi
 ### YAML Structure
 
 ```yaml
-# .fsctx/index/current_plan.yaml
+# .fewword/index/current_plan.yaml
 meta:
   created: "2025-01-07T10:00:00Z"
   last_updated: "2025-01-07T14:30:00Z"
@@ -103,7 +103,7 @@ import yaml
 from pathlib import Path
 from datetime import datetime
 
-PLAN_FILE = Path(".fsctx/index/current_plan.yaml")
+PLAN_FILE = Path(".fewword/index/current_plan.yaml")
 
 def load_plan() -> dict:
     if PLAN_FILE.exists():
@@ -134,13 +134,13 @@ def get_current_focus() -> dict:
 ### Directory Setup
 
 ```bash
-mkdir -p .fsctx/scratch/subagents/{research,code,test,coordinator}
+mkdir -p .fewword/scratch/subagents/{research,code,test,coordinator}
 ```
 
 ### Agent Output Format
 
 ```markdown
-<!-- .fsctx/scratch/subagents/research/findings.md -->
+<!-- .fewword/scratch/subagents/research/findings.md -->
 # Research Findings
 
 ## Topic: Authentication Libraries
@@ -175,7 +175,7 @@ def synthesize_agent_findings() -> str:
     """Read all agent findings and create synthesis."""
     findings = []
 
-    for agent_dir in Path(".fsctx/scratch/subagents").iterdir():
+    for agent_dir in Path(".fewword/scratch/subagents").iterdir():
         if agent_dir.is_dir() and agent_dir.name != "coordinator":
             findings_file = agent_dir / "findings.md"
             if findings_file.exists():
@@ -189,7 +189,7 @@ def synthesize_agent_findings() -> str:
     for f in findings:
         synthesis += f"## From {f['agent']}\n{f['content']}\n\n"
 
-    Path(".fsctx/scratch/subagents/coordinator/synthesis.md").write_text(synthesis)
+    Path(".fewword/scratch/subagents/coordinator/synthesis.md").write_text(synthesis)
     return synthesis
 ```
 
@@ -199,33 +199,33 @@ def synthesize_agent_findings() -> str:
 
 ```bash
 # Last 5 lines around each error
-grep -B 2 -A 5 -i "error\|exception\|failed" .fsctx/scratch/tool_outputs/*.txt
+grep -B 2 -A 5 -i "error\|exception\|failed" .fewword/scratch/tool_outputs/*.txt
 
 # Just filenames with errors
-grep -l "error" .fsctx/scratch/tool_outputs/*.txt
+grep -l "error" .fewword/scratch/tool_outputs/*.txt
 ```
 
 ### Search Specific Sections
 
 ```bash
 # Find function definitions
-grep -n "^def \|^async def " .fsctx/scratch/tool_outputs/code_*.txt
+grep -n "^def \|^async def " .fewword/scratch/tool_outputs/code_*.txt
 
 # Extract JSON from mixed output
-grep -o '{.*}' .fsctx/scratch/tool_outputs/api_response.txt | head -1
+grep -o '{.*}' .fewword/scratch/tool_outputs/api_response.txt | head -1
 ```
 
 ### Read Line Ranges
 
 ```bash
 # Lines 100-150 of a file
-sed -n '100,150p' .fsctx/scratch/tool_outputs/large_file.txt
+sed -n '100,150p' .fewword/scratch/tool_outputs/large_file.txt
 
 # Last 50 lines
-tail -50 .fsctx/scratch/tool_outputs/build_log.txt
+tail -50 .fewword/scratch/tool_outputs/build_log.txt
 
 # First 20 lines
-head -20 .fsctx/scratch/tool_outputs/query_results.txt
+head -20 .fewword/scratch/tool_outputs/query_results.txt
 ```
 
 ## History Reference Pattern
@@ -234,7 +234,7 @@ head -20 .fsctx/scratch/tool_outputs/query_results.txt
 from pathlib import Path
 from datetime import datetime
 
-HISTORY_DIR = Path(".fsctx/memory/history")
+HISTORY_DIR = Path(".fewword/memory/history")
 
 def archive_conversation(messages: list, summary: str) -> str:
     """Archive full history, return reference for new context."""

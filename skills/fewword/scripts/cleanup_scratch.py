@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 
-PLUGIN_DIR = Path(".fsctx")
+PLUGIN_DIR = Path(".fewword")
 SCRATCH_DIR = PLUGIN_DIR / "scratch"
 MEMORY_DIR = PLUGIN_DIR / "memory"
 INDEX_DIR = PLUGIN_DIR / "index"
@@ -63,7 +63,7 @@ def cleanup_all(dry_run: bool = False) -> dict:
     results = {"deleted": 0, "freed_bytes": 0}
 
     if not SCRATCH_DIR.exists():
-        print("No .fsctx/scratch/ directory found")
+        print("No .fewword/scratch/ directory found")
         return results
 
     for file_path in SCRATCH_DIR.rglob("*"):

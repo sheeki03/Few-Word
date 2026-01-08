@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'mkdir -p .fsctx/{scratch/{tool_outputs,subagents},memory/{plans,history,patterns},index} 2>/dev/null; find .fsctx/scratch/tool_outputs -type f -mmin +60 -delete 2>/dev/null; find .fsctx/scratch/subagents -type f -mmin +120 -delete 2>/dev/null; if [ -d .git ] && ! grep -q \".fsctx/scratch\" .gitignore 2>/dev/null; then echo -e \"\\n# FewWord context plugin\\n.fsctx/scratch/\\n.fsctx/index/\" >> .gitignore 2>/dev/null && echo \"[fewword] Added to .gitignore\"; fi; echo \"[fewword] Ready\"'"
+            "command": "bash -c 'mkdir -p .fewword/{scratch/{tool_outputs,subagents},memory/{plans,history,patterns},index} 2>/dev/null; find .fewword/scratch/tool_outputs -type f -mmin +60 -delete 2>/dev/null; find .fewword/scratch/subagents -type f -mmin +120 -delete 2>/dev/null; if [ -d .git ] && ! grep -q \".fewword/scratch\" .gitignore 2>/dev/null; then echo -e \"\\n# FewWord context plugin\\n.fewword/scratch/\\n.fewword/index/\" >> .gitignore 2>/dev/null && echo \"[fewword] Added to .gitignore\"; fi; echo \"[fewword] Ready\"'"
           }
         ]
       }
@@ -37,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'if [ -f .fsctx/index/current_plan.yaml ] && grep -q \"status: completed\" .fsctx/index/current_plan.yaml 2>/dev/null; then ts=$(date +%Y%m%d_%H%M%S); mv .fsctx/index/current_plan.yaml \".fsctx/memory/plans/archived_${ts}.yaml\" 2>/dev/null && echo \"[fewword] Archived completed plan\"; fi'"
+            "command": "bash -c 'if [ -f .fewword/index/current_plan.yaml ] && grep -q \"status: completed\" .fewword/index/current_plan.yaml 2>/dev/null; then ts=$(date +%Y%m%d_%H%M%S); mv .fewword/index/current_plan.yaml \".fewword/memory/plans/archived_${ts}.yaml\" 2>/dev/null && echo \"[fewword] Archived completed plan\"; fi'"
           }
         ]
       }
@@ -48,7 +48,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'size=$(du -sm .fsctx/scratch 2>/dev/null | cut -f1); if [ \"${size:-0}\" -gt 100 ]; then echo \"[fewword] Warning: .fsctx/scratch/ is ${size}MB - consider cleanup\"; fi'"
+            "command": "bash -c 'size=$(du -sm .fewword/scratch 2>/dev/null | cut -f1); if [ \"${size:-0}\" -gt 100 ]; then echo \"[fewword] Warning: .fewword/scratch/ is ${size}MB - consider cleanup\"; fi'"
           }
         ]
       }

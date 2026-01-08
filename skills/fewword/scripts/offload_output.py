@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 
-SCRATCH_DIR = Path(".fsctx/scratch/tool_outputs")
+SCRATCH_DIR = Path(".fewword/scratch/tool_outputs")
 TOKEN_THRESHOLD = 2000  # Approximate token count threshold
 
 

@@ -1,5 +1,5 @@
 /**
- * Filesystem Context Plugin for OpenCode
+ * FewWord Plugin for OpenCode
  *
  * Equivalent functionality to Claude Code hooks:
  * - tool.execute.before: Bash output offloading (write-then-decide)
@@ -39,7 +39,7 @@ const SKIP_PATTERNS = [
 
 function isDisabled(cwd: string): boolean {
   if (process.env.FEWWORD_DISABLE) return true;
-  const disableFile = join(cwd, '.fsctx', 'DISABLE_OFFLOAD');
+  const disableFile = join(cwd, '.fewword', 'DISABLE_OFFLOAD');
   return existsSync(disableFile);
 }
 
@@ -77,55 +77,55 @@ function generateWrapper(originalCmd: string, outputFile: string): string {
   const escapedFile = outputFile.replace(/'/g, "'\"'\"'");
 
   return `
-__fsctx_out='${escapedFile}'
-__fsctx_dir="$(dirname "$__fsctx_out")"
-mkdir -p "$__fsctx_dir" 2>/dev/null
+__fewword_out='${escapedFile}'
+__fewword_dir="$(dirname "$__fewword_out")"
+mkdir -p "$__fewword_dir" 2>/dev/null
 
 # Capture stdout+stderr
-{ ${originalCmd} ; } > "$__fsctx_out" 2>&1
-__fsctx_exit=$?
+{ ${originalCmd} ; } > "$__fewword_out" 2>&1
+__fewword_exit=$?
 
 # Measure size
-__fsctx_bytes=$(wc -c < "$__fsctx_out" 2>/dev/null | tr -d ' ')
-__fsctx_lines=$(wc -l < "$__fsctx_out" 2>/dev/null | tr -d ' ')
+__fewword_bytes=$(wc -c < "$__fewword_out" 2>/dev/null | tr -d ' ')
+__fewword_lines=$(wc -l < "$__fewword_out" 2>/dev/null | tr -d ' ')
 
 # Write-then-decide
-if [ "\${__fsctx_bytes:-0}" -lt ${SIZE_THRESHOLD} ]; then
-  cat "$__fsctx_out"
-  rm -f "$__fsctx_out"
+if [ "\${__fewword_bytes:-0}" -lt ${SIZE_THRESHOLD} ]; then
+  cat "$__fewword_out"
+  rm -f "$__fewword_out"
 else
   echo ""
   echo "=== [FewWord: Output offloaded] ==="
-  echo "File: $__fsctx_out"
-  echo "Size: $__fsctx_bytes bytes, $__fsctx_lines lines"
-  echo "Exit: $__fsctx_exit"
+  echo "File: $__fewword_out"
+  echo "Size: $__fewword_bytes bytes, $__fewword_lines lines"
+  echo "Exit: $__fewword_exit"
   echo ""
-  if [ "$__fsctx_lines" -le ${PREVIEW_LINES * 2} ]; then
+  if [ "$__fewword_lines" -le ${PREVIEW_LINES * 2} ]; then
     echo "=== Full output ==="
-    cat "$__fsctx_out"
+    cat "$__fewword_out"
   else
     echo "=== First ${PREVIEW_LINES} lines ==="
-    head -${PREVIEW_LINES} "$__fsctx_out"
-    __fsctx_omitted=$(( __fsctx_lines - ${PREVIEW_LINES * 2} ))
+    head -${PREVIEW_LINES} "$__fewword_out"
+    __fewword_omitted=$(( __fewword_lines - ${PREVIEW_LINES * 2} ))
     echo ""
-    echo "... ($__fsctx_omitted lines omitted) ..."
+    echo "... ($__fewword_omitted lines omitted) ..."
     echo ""
     echo "=== Last ${PREVIEW_LINES} lines ==="
-    tail -${PREVIEW_LINES} "$__fsctx_out"
+    tail -${PREVIEW_LINES} "$__fewword_out"
   fi
   echo ""
   echo "=== Retrieval commands ==="
-  echo "  Full: cat $__fsctx_out"
-  echo "  Grep: grep 'pattern' $__fsctx_out"
+  echo "  Full: cat $__fewword_out"
+  echo "  Grep: grep 'pattern' $__fewword_out"
 fi
 
-exit $__fsctx_exit
+exit $__fewword_exit
 `.trim();
 }
 
 function logToolExecution(cwd: string, sessionId: string, toolName: string): void {
   try {
-    const indexDir = join(cwd, '.fsctx', 'index');
+    const indexDir = join(cwd, '.fewword', 'index');
     if (!existsSync(indexDir)) mkdirSync(indexDir, { recursive: true });
 
     const logFile = join(indexDir, 'tool_log.jsonl');
@@ -146,13 +146,13 @@ function logToolExecution(cwd: string, sessionId: string, toolName: string): voi
 
 function archiveCompletedPlans(cwd: string): void {
   try {
-    const planFile = join(cwd, '.fsctx', 'index', 'current_plan.yaml');
+    const planFile = join(cwd, '.fewword', 'index', 'current_plan.yaml');
     if (!existsSync(planFile)) return;
 
     const content = readFileSync(planFile, 'utf-8');
     if (!content.includes('status: completed')) return;
 
-    const archiveDir = join(cwd, '.fsctx', 'memory', 'plans');
+    const archiveDir = join(cwd, '.fewword', 'memory', 'plans');
     if (!existsSync(archiveDir)) mkdirSync(archiveDir, { recursive: true });
 
     const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 15);
@@ -166,15 +166,15 @@ function archiveCompletedPlans(cwd: string): void {
 }
 
 // Main plugin export
-export default async function fsctxPlugin({ cwd }: { cwd: string }) {
+export default async function fewwordPlugin({ cwd }: { cwd: string }) {
   // Ensure directories exist on load
   const dirs = [
-    '.fsctx/scratch/tool_outputs',
-    '.fsctx/scratch/subagents',
-    '.fsctx/memory/plans',
-    '.fsctx/memory/history',
-    '.fsctx/memory/patterns',
-    '.fsctx/index',
+    '.fewword/scratch/tool_outputs',
+    '.fewword/scratch/subagents',
+    '.fewword/memory/plans',
+    '.fewword/memory/history',
+    '.fewword/memory/patterns',
+    '.fewword/index',
   ];
 
   for (const dir of dirs) {
@@ -185,7 +185,7 @@ export default async function fsctxPlugin({ cwd }: { cwd: string }) {
   }
 
   return {
-    name: 'fsctx',
+    name: 'fewword',
 
     // Equivalent to Claude Code's PreToolUse
     'tool.execute.before': async (
@@ -206,7 +206,7 @@ export default async function fsctxPlugin({ cwd }: { cwd: string }) {
         const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 15);
         const firstCmd = getFirstCommand(command);
         const safeCmd = firstCmd.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 20);
-        const outputFile = join(cwd, `.fsctx/scratch/tool_outputs/${safeCmd}_${timestamp}_${eventId}.txt`);
+        const outputFile = join(cwd, `.fewword/scratch/tool_outputs/${safeCmd}_${timestamp}_${eventId}.txt`);
 
         args.command = generateWrapper(command, outputFile);
       }
@@ -229,7 +229,7 @@ export default async function fsctxPlugin({ cwd }: { cwd: string }) {
 
       // Check scratch size
       try {
-        const scratchDir = join(cwd, '.fsctx', 'scratch');
+        const scratchDir = join(cwd, '.fewword', 'scratch');
         if (existsSync(scratchDir)) {
           let totalSize = 0;
           const countFiles = (dir: string) => {
@@ -247,7 +247,7 @@ export default async function fsctxPlugin({ cwd }: { cwd: string }) {
 
           const sizeMB = totalSize / (1024 * 1024);
           if (sizeMB > 100) {
-            console.log(`[fewword] Warning: .fsctx/scratch/ is ${sizeMB.toFixed(1)}MB - consider cleanup`);
+            console.log(`[fewword] Warning: .fewword/scratch/ is ${sizeMB.toFixed(1)}MB - consider cleanup`);
           }
         }
       } catch {

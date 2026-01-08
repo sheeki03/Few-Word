@@ -36,7 +36,7 @@ def is_disabled(cwd: str) -> bool:
     # Also check for explicit allow-write flag
     if os.environ.get('FEWWORD_ALLOW_WRITE'):
         return True
-    disable_file = Path(cwd) / '.fsctx' / 'DISABLE_OFFLOAD'
+    disable_file = Path(cwd) / '.fewword' / 'DISABLE_OFFLOAD'
     if disable_file.exists():
         return True
     return False

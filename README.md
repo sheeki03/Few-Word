@@ -26,7 +26,7 @@ FewWord implements **dynamic context discovery** — patterns from [Cursor](http
 **You get this:**
 ```
 === [FewWord: Output offloaded] ===
-File: .fsctx/scratch/tool_outputs/pytest_143022_a1b2c3d4.txt
+File: .fewword/scratch/tool_outputs/pytest_143022_a1b2c3d4.txt
 Size: 45678 bytes, 1234 lines
 Exit: 0
 
@@ -34,8 +34,8 @@ Exit: 0
 ...preview...
 
 === Retrieval commands ===
-  Full: cat .fsctx/scratch/tool_outputs/pytest_143022_a1b2c3d4.txt
-  Grep: grep 'FAILED' .fsctx/scratch/tool_outputs/pytest_143022_a1b2c3d4.txt
+  Full: cat .fewword/scratch/tool_outputs/pytest_143022_a1b2c3d4.txt
+  Grep: grep 'FAILED' .fewword/scratch/tool_outputs/pytest_143022_a1b2c3d4.txt
 ```
 
 ---
@@ -47,7 +47,7 @@ Exit: 0
 | Feature | What Happens |
 |---------|--------------|
 | **Bash Output Offloading** | Large outputs (>8KB) → written to file, pointer + preview returned. Small outputs → shown normally. |
-| **Plan Persistence** | Active plan in `.fsctx/index/current_plan.yaml`, auto-archived on completion |
+| **Plan Persistence** | Active plan in `.fewword/index/current_plan.yaml`, auto-archived on completion |
 | **MCP Tool Logging** | All MCP calls logged (sanitized, no secrets) |
 | **MCP Write Gating** | Write operations require confirmation |
 | **Pagination Clamping** | Prevents excessive MCP query results |
@@ -66,7 +66,7 @@ Exit: 0
 
 | Command | What It Does |
 |---------|--------------|
-| `/context-init` | Set up filesystem context structure |
+| `/context-init` | Set up FewWord directory structure |
 | `/context-cleanup` | See storage stats, clean old files |
 | `/context-search <term>` | Search through all offloaded context |
 
@@ -82,7 +82,7 @@ Exit: 0
 
 ### OpenCode
 
-Copy `.opencode/plugin/fsctx.ts` to your project's `.opencode/plugin/` directory.
+Copy `.opencode/plugin/fewword.ts` to your project's `.opencode/plugin/` directory.
 
 **Important**: OpenCode MCP interception is best-effort and may be log-only depending on version. See [known limitations](#opencode-limitations).
 
@@ -92,7 +92,7 @@ Copy `.opencode/plugin/fsctx.ts` to your project's `.opencode/plugin/` directory
 
 ```
 your-project/
-└── .fsctx/                          # All plugin data
+└── .fewword/                          # All plugin data
     ├── scratch/                     # Ephemeral (auto-cleaned hourly)
     │   ├── tool_outputs/            # Command outputs
     │   └── subagents/               # Agent workspaces
@@ -107,7 +107,7 @@ your-project/
     └── DISABLE_OFFLOAD              # Escape hatch file
 ```
 
-**Note**: The plugin automatically adds `.fsctx/scratch/` and `.fsctx/index/` to `.gitignore` on first session start in a git repo.
+**Note**: The plugin automatically adds `.fewword/scratch/` and `.fewword/index/` to `.gitignore` on first session start in a git repo.
 
 ---
 
@@ -117,7 +117,7 @@ If automatic offloading causes issues:
 
 ```bash
 # Disable via file
-touch .fsctx/DISABLE_OFFLOAD
+touch .fewword/DISABLE_OFFLOAD
 
 # Or via environment variable
 export FEWWORD_DISABLE=1
@@ -202,14 +202,14 @@ Claude: [context summarized, test details lost]
 ### After (With FewWord)
 ```
 You: Run the full test suite
-Claude: [Output offloaded to .fsctx/scratch/tool_outputs/pytest_143022.txt]
+Claude: [Output offloaded to .fewword/scratch/tool_outputs/pytest_143022.txt]
         Size: 45678 bytes, Exit: 1
         === Last 10 lines ===
         FAILED auth_test.py::test_login - AssertionError
 You: Now fix the auth bug
 Claude: [working with clean context]
 You: What tests are failing?
-Claude: [greps the file] grep FAILED .fsctx/scratch/tool_outputs/pytest_143022.txt
+Claude: [greps the file] grep FAILED .fewword/scratch/tool_outputs/pytest_143022.txt
         FAILED auth_test.py::test_login - expected 200, got 401
 ```
 

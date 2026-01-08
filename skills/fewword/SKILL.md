@@ -15,7 +15,7 @@ The filesystem provides a single interface for storing, retrieving, and updating
 
 ```
 project/
-└── .fsctx/                          # All plugin data in one namespace
+└── .fewword/                          # All plugin data in one namespace
     ├── scratch/                     # Ephemeral (auto-cleaned hourly)
     │   ├── tool_outputs/            # Offloaded command outputs
     │   └── subagents/               # Agent workspace files
@@ -34,7 +34,7 @@ project/
 ## Escape Hatch
 
 If automatic offloading causes issues:
-- Create file: `touch .fsctx/DISABLE_OFFLOAD`
+- Create file: `touch .fewword/DISABLE_OFFLOAD`
 - Or set env: `export FEWWORD_DISABLE=1`
 
 ## Automatic Behaviors (v1)
@@ -51,7 +51,7 @@ When you run a Bash command, the plugin automatically:
 **What you see for large output:**
 ```
 === [FewWord: Output offloaded] ===
-File: .fsctx/scratch/tool_outputs/pytest_20250107_143022_a1b2c3d4.txt
+File: .fewword/scratch/tool_outputs/pytest_20250107_143022_a1b2c3d4.txt
 Size: 45678 bytes, 1234 lines
 Exit: 0
 
@@ -62,8 +62,8 @@ Exit: 0
 ...preview...
 
 === Retrieval commands ===
-  Full: cat .fsctx/scratch/tool_outputs/pytest_20250107_143022_a1b2c3d4.txt
-  Grep: grep 'pattern' .fsctx/scratch/tool_outputs/pytest_20250107_143022_a1b2c3d4.txt
+  Full: cat .fewword/scratch/tool_outputs/pytest_20250107_143022_a1b2c3d4.txt
+  Grep: grep 'pattern' .fewword/scratch/tool_outputs/pytest_20250107_143022_a1b2c3d4.txt
 ```
 
 **Skipped commands** (v1 conservatively skips):
@@ -75,7 +75,7 @@ Exit: 0
 
 ### MCP Tool Handling
 
-- All MCP tool calls are logged to `.fsctx/index/mcp_metadata.jsonl`
+- All MCP tool calls are logged to `.fewword/index/mcp_metadata.jsonl`
 - Write-like operations (create, update, delete, commit, push) are gated
 - Pagination parameters are automatically clamped to prevent excessive results
 
@@ -86,7 +86,7 @@ Exit: 0
 For long-horizon tasks, use the canonical active plan:
 
 ```yaml
-# .fsctx/index/current_plan.yaml
+# .fewword/index/current_plan.yaml
 objective: "Refactor authentication module"
 status: in_progress
 steps:
@@ -110,7 +110,7 @@ steps:
 Sub-agents write findings directly to filesystem instead of message passing:
 
 ```
-.fsctx/scratch/subagents/
+.fewword/scratch/subagents/
 ├── research_agent/
 │   ├── findings.md
 │   └── sources.jsonl
@@ -123,18 +123,18 @@ Sub-agents write findings directly to filesystem instead of message passing:
 ### Pattern 3: Chat History as File Reference
 
 When context window fills:
-1. Write full history to `.fsctx/memory/history/session_{id}.txt`
+1. Write full history to `.fewword/memory/history/session_{id}.txt`
 2. Generate summary for new context window
-3. Include reference: "Full history in .fsctx/memory/history/session_{id}.txt"
+3. Include reference: "Full history in .fewword/memory/history/session_{id}.txt"
 4. Use grep to recover details lost in summarization
 
 ## Search Techniques
 
 | Tool | Use Case | Example |
 |------|----------|---------|
-| `ls` / `find` | Discover structure | `find .fsctx -name "*.txt" -mmin -30` |
-| `grep` | Content search | `grep -rn "error" .fsctx/scratch/` |
-| `head`/`tail` | Boundary reads | `tail -100 .fsctx/scratch/tool_outputs/log.txt` |
+| `ls` / `find` | Discover structure | `find .fewword -name "*.txt" -mmin -30` |
+| `grep` | Content search | `grep -rn "error" .fewword/scratch/` |
+| `head`/`tail` | Boundary reads | `tail -100 .fewword/scratch/tool_outputs/log.txt` |
 | `sed -n` | Line ranges | `sed -n '50,100p' file.txt` |
 
 ## References

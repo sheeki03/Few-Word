@@ -1,7 +1,7 @@
 
-# Filesystem context plugin
-.fsctx/scratch/
-.fsctx/index/
-/.fsctx
+# FewWord plugin
+.fewword/scratch/
+.fewword/index/
+/.fewword
 TESTING.md
 TEST_RESULTS.md

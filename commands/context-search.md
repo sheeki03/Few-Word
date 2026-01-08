@@ -8,7 +8,7 @@ arguments:
 
 # Search Offloaded Context
 
-Find and retrieve information from filesystem context storage.
+Find and retrieve information from FewWord storage.
 
 ## Arguments
 
@@ -28,15 +28,15 @@ Example: `/context-search authentication error`
    echo "=== Searching for: $SEARCH_TERM ==="
    echo ""
    echo "=== Scratch files (ephemeral) ==="
-   grep -rn --include="*.txt" --include="*.md" --include="*.yaml" "$SEARCH_TERM" .fsctx/scratch/ 2>/dev/null | head -20
+   grep -rn --include="*.txt" --include="*.md" --include="*.yaml" "$SEARCH_TERM" .fewword/scratch/ 2>/dev/null | head -20
 
    echo ""
    echo "=== Memory files (persistent) ==="
-   grep -rn --include="*.txt" --include="*.md" --include="*.yaml" "$SEARCH_TERM" .fsctx/memory/ 2>/dev/null | head -20
+   grep -rn --include="*.txt" --include="*.md" --include="*.yaml" "$SEARCH_TERM" .fewword/memory/ 2>/dev/null | head -20
 
    echo ""
    echo "=== Index files (metadata) ==="
-   grep -n "$SEARCH_TERM" .fsctx/index/*.jsonl 2>/dev/null | head -10
+   grep -n "$SEARCH_TERM" .fewword/index/*.jsonl 2>/dev/null | head -10
    ```
 
 3. If matches found, offer to:
@@ -46,5 +46,5 @@ Example: `/context-search authentication error`
 
 4. If no matches, suggest:
    - Try different search terms
-   - List available files with `ls -la .fsctx/scratch/ .fsctx/memory/`
+   - List available files with `ls -la .fewword/scratch/ .fewword/memory/`
    - Check if context was already cleaned up

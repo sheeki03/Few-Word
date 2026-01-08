@@ -50,7 +50,7 @@ def is_disabled(cwd: str) -> bool:
     """Check if offloading is disabled via env var or file."""
     if os.environ.get('FEWWORD_DISABLE'):
         return True
-    disable_file = Path(cwd) / '.fsctx' / 'DISABLE_OFFLOAD'
+    disable_file = Path(cwd) / '.fewword' / 'DISABLE_OFFLOAD'
     if disable_file.exists():
         return True
     return False
@@ -119,53 +119,53 @@ def generate_wrapper(original_cmd: str, output_file: str, cwd: str) -> str:
     escaped_file = output_file.replace("'", "'\"'\"'")
 
     wrapper = f'''
-__fsctx_out='{escaped_file}'
-__fsctx_dir="$(dirname "$__fsctx_out")"
-mkdir -p "$__fsctx_dir" 2>/dev/null
+__fewword_out='{escaped_file}'
+__fewword_dir="$(dirname "$__fewword_out")"
+mkdir -p "$__fewword_dir" 2>/dev/null
 
 # 1. Capture stdout+stderr to file
-{{ {original_cmd} ; }} > "$__fsctx_out" 2>&1
-__fsctx_exit=$?
+{{ {original_cmd} ; }} > "$__fewword_out" 2>&1
+__fewword_exit=$?
 
 # 2. Measure size after command completes
-__fsctx_bytes=$(wc -c < "$__fsctx_out" 2>/dev/null | tr -d ' ')
-__fsctx_lines=$(wc -l < "$__fsctx_out" 2>/dev/null | tr -d ' ')
+__fewword_bytes=$(wc -c < "$__fewword_out" 2>/dev/null | tr -d ' ')
+__fewword_lines=$(wc -l < "$__fewword_out" 2>/dev/null | tr -d ' ')
 
 # 3. Decide: small -> cat + delete, large -> pointer + preview
-if [ "${{__fsctx_bytes:-0}}" -lt {SIZE_THRESHOLD} ]; then
+if [ "${{__fewword_bytes:-0}}" -lt {SIZE_THRESHOLD} ]; then
   # Small output: show full content (normal UX)
-  cat "$__fsctx_out"
-  rm -f "$__fsctx_out"
+  cat "$__fewword_out"
+  rm -f "$__fewword_out"
 else
   # Large output: show pointer and preview
   echo ""
   echo "=== [FewWord: Output offloaded] ==="
-  echo "File: $__fsctx_out"
-  echo "Size: $__fsctx_bytes bytes, $__fsctx_lines lines"
-  echo "Exit: $__fsctx_exit"
+  echo "File: $__fewword_out"
+  echo "Size: $__fewword_bytes bytes, $__fewword_lines lines"
+  echo "Exit: $__fewword_exit"
   echo ""
-  if [ "$__fsctx_lines" -le {PREVIEW_LINES * 2} ]; then
+  if [ "$__fewword_lines" -le {PREVIEW_LINES * 2} ]; then
     echo "=== Full output ==="
-    cat "$__fsctx_out"
+    cat "$__fewword_out"
   else
     echo "=== First {PREVIEW_LINES} lines ==="
-    head -{PREVIEW_LINES} "$__fsctx_out"
-    __fsctx_omitted=$(( __fsctx_lines - {PREVIEW_LINES * 2} ))
+    head -{PREVIEW_LINES} "$__fewword_out"
+    __fewword_omitted=$(( __fewword_lines - {PREVIEW_LINES * 2} ))
     echo ""
-    echo "... ($__fsctx_omitted lines omitted) ..."
+    echo "... ($__fewword_omitted lines omitted) ..."
     echo ""
     echo "=== Last {PREVIEW_LINES} lines ==="
-    tail -{PREVIEW_LINES} "$__fsctx_out"
+    tail -{PREVIEW_LINES} "$__fewword_out"
   fi
   echo ""
   echo "=== Retrieval commands ==="
-  echo "  Full: cat $__fsctx_out"
-  echo "  Grep: grep 'pattern' $__fsctx_out"
-  echo "  Range: sed -n '50,100p' $__fsctx_out"
+  echo "  Full: cat $__fewword_out"
+  echo "  Grep: grep 'pattern' $__fewword_out"
+  echo "  Range: sed -n '50,100p' $__fewword_out"
 fi
 
 # 4. Always preserve exit code
-exit $__fsctx_exit
+exit $__fewword_exit
 '''
     return wrapper.strip()
 
@@ -207,7 +207,7 @@ def main():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     first_cmd = get_first_command(command)
     safe_cmd = re.sub(r'[^a-zA-Z0-9_-]', '_', first_cmd)[:20]
-    output_file = f"{cwd}/.fsctx/scratch/tool_outputs/{safe_cmd}_{timestamp}_{event_id}.txt"
+    output_file = f"{cwd}/.fewword/scratch/tool_outputs/{safe_cmd}_{timestamp}_{event_id}.txt"
 
     # Generate wrapped command
     wrapped = generate_wrapper(command, output_file, cwd)
