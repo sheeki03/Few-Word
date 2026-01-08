@@ -1,7 +1,7 @@
 {
   "name": "fewword",
-  "version": "1.2.0",
-  "description": "Context engineering plugin - offloads large outputs to filesystem, saves 82% of message tokens",
+  "version": "1.3.0",
+  "description": "Context engineering plugin - tiered offloading with ultra-compact pointers (~35 tokens). Smart retention + session stats.",
   "author": {
     "name": "Sheeki"
   },

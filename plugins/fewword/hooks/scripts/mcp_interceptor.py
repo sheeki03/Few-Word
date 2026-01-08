@@ -117,11 +117,14 @@ def main():
 
     # Only output JSON if we have updates
     if pagination_updates:
+        # IMPORTANT: Merge updates into full input, don't replace entirely
+        # Otherwise we'd strip required params like 'cwd', 'plan', etc.
+        full_updated_input = {**tool_input, **pagination_updates}
         output = {
             "hookSpecificOutput": {
                 "hookEventName": "PreToolUse",
                 "permissionDecision": "allow",
-                "updatedInput": pagination_updates
+                "updatedInput": full_updated_input
             }
         }
         print(json.dumps(output))
