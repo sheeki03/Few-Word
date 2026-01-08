@@ -1,0 +1,14 @@
+{
+  "name": "fewword",
+  "version": "1.2.0",
+  "description": "Context engineering plugin - offloads large outputs to filesystem, saves 82% of message tokens",
+  "author": {
+    "name": "Sheeki"
+  },
+  "repository": "https://github.com/sheeki03/Few-Word",
+  "license": "MIT",
+  "keywords": ["context", "tokens", "offload", "performance"],
+  "hooks": "./hooks/hooks.json",
+  "commands": "./commands",
+  "skills": "./skills"
+}

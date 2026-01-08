@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "sheeki03-Few-Word",
+  "owner": {
+    "name": "Sheeki",
+    "url": "https://github.com/sheeki03"
+  },
+  "plugins": [
+    {
+      "name": "fewword",
+      "source": "./plugins/fewword",
+      "description": "Offloads large command outputs to filesystem. Saves 82% of message tokens.",
+      "version": "1.2.0",
+      "author": {
+        "name": "Sheeki"
+      }
+    }
+  ]
+}

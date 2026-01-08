@@ -224,7 +224,6 @@ Claude: grep FAILED .fewword/scratch/tool_outputs/pytest_143022.txt
 ## Credits & References
 
 Based on research and patterns from:
-- [Cursor: Dynamic Context Discovery](https://cursor.com/blog/dynamic-context-discovery)
 - [LangChain: How Agents Can Use Filesystems](https://blog.langchain.com/how-agents-can-use-filesystems-for-context-engineering/)
 - [Manus: Context Engineering for AI Agents](https://manus.im/blog/Context-Engineering-for-AI-Agents-Lessons-from-Building-Manus)
 
