@@ -4,66 +4,112 @@ description: Show recent offloaded outputs from scratch
 
 # Context Recent
 
-Show recent offloaded outputs with their status. Primary recovery path after context compaction.
+Show recent offloaded outputs with numbered list for easy reference. Primary recovery path after context compaction.
+
+## Output Format
+
+```
+Recent Offloaded Outputs
+────────────────────────
+ #  ID       CMD      EXIT   SIZE    AGE     STATUS
+ 1) A1B2     pytest   1      45K     2h      exists
+ 2) C3D4     npm      0      12K     3h      exists
+ 3) E5F6     ls       0      900B    4h      cleaned
+
+Use: /context-open 1  or  /context-open pytest  or  /context-open A1B2
+```
 
 ## Steps
 
-1. Check if manifest exists and read it:
+1. Get session ID and set up paths:
    ```bash
-   if [ -f ".fewword/index/tool_outputs.jsonl" ]; then
-     echo "=== Recent Offloaded Outputs ==="
-     echo ""
-     # Show last 10 entries (reverse order, newest first)
-     tail -20 .fewword/index/tool_outputs.jsonl | grep '"type":"offload"' | tail -10 | while IFS= read -r line; do
-       id=$(echo "$line" | sed 's/.*"id":"\([^"]*\)".*/\1/')
-       cmd=$(echo "$line" | sed 's/.*"cmd":"\([^"]*\)".*/\1/')
-       exit_code=$(echo "$line" | sed 's/.*"exit_code":\([0-9-]*\).*/\1/')
-       bytes=$(echo "$line" | sed 's/.*"bytes":\([0-9]*\).*/\1/')
-       path=$(echo "$line" | sed 's/.*"path":"\([^"]*\)".*/\1/')
+   manifest=".fewword/index/tool_outputs.jsonl"
+   session_file=".fewword/index/session.json"
+   helper="$CLAUDE_PLUGIN_ROOT/hooks/scripts/context_helpers.py"
 
-       # Check if file still exists
-       if [ -f "$path" ]; then
-         status="exists"
-       else
-         status="DELETED"
-       fi
+   # Get current session ID
+   session_id=""
+   if [ -f "$session_file" ]; then
+     session_id=$(grep -o '"session_id":"[^"]*"' "$session_file" | cut -d'"' -f4)
+   fi
 
-       echo "[$id] $cmd exit=$exit_code ${bytes}B - $status"
-       echo "    $path"
-     done
-   else
+   if [ ! -f "$manifest" ]; then
      echo "No manifest found. Run a command that produces large output first."
+     exit 0
    fi
    ```
 
-2. Show LATEST aliases if they exist:
+2. Read manifest and build numbered list:
    ```bash
-   echo ""
-   echo "=== LATEST Aliases ==="
-   for f in .fewword/scratch/tool_outputs/LATEST*.txt; do
-     if [ -L "$f" ]; then
-       target=$(readlink "$f")
-       echo "$(basename "$f") -> $(basename "$target")"
-     elif [ -f "$f" ]; then
-       echo "$(basename "$f") (pointer file)"
+   echo "Recent Offloaded Outputs"
+   echo "────────────────────────"
+   printf " %-3s %-8s %-12s %-4s %-7s %-6s %s\n" "#" "ID" "CMD" "EXIT" "SIZE" "AGE" "STATUS"
+
+   # Prepare index file (session-scoped)
+   index_path=".fewword/index/.recent_index_${session_id:-default}"
+   pointer_path=".fewword/index/.recent_index"
+
+   # Clear/create index file
+   > "$index_path"
+
+   # Read last 10 offload entries
+   num=0
+   tail -30 "$manifest" | grep '"type":"offload"' | tail -10 | while IFS= read -r line; do
+     num=$((num + 1))
+
+     # Extract fields
+     id=$(echo "$line" | sed 's/.*"id":"\([^"]*\)".*/\1/')
+     cmd=$(echo "$line" | sed 's/.*"cmd":"\([^"]*\)".*/\1/')
+     exit_code=$(echo "$line" | sed 's/.*"exit_code":\([0-9-]*\).*/\1/')
+     bytes=$(echo "$line" | sed 's/.*"bytes":\([0-9]*\).*/\1/')
+     path=$(echo "$line" | sed 's/.*"path":"\([^"]*\)".*/\1/')
+     created_at=$(echo "$line" | sed 's/.*"created_at":"\([^"]*\)".*/\1/')
+
+     # Format size
+     if [ "$bytes" -ge 1048576 ]; then
+       size="$((bytes / 1048576))M"
+     elif [ "$bytes" -ge 1024 ]; then
+       size="$((bytes / 1024))K"
+     else
+       size="${bytes}B"
      fi
-   done 2>/dev/null || echo "No LATEST aliases"
+
+     # Calculate age using Python helper
+     age=$(python3 "$helper" age "$created_at" 2>/dev/null || echo "?")
+
+     # Check if file still exists
+     if [ -f "$path" ]; then
+       status="exists"
+     else
+       status="cleaned"
+     fi
+
+     # Print row
+     printf " %-3s %-8s %-12s %-4s %-7s %-6s %s\n" "${num})" "${id:0:8}" "${cmd:0:12}" "$exit_code" "$size" "$age" "$status"
+
+     # Write to index file for /context-open resolution
+     echo "${num}:${id}:${cmd}" >> "$index_path"
+   done
+
+   # Create symlink or pointer to active index (Windows-safe)
+   ln -sf "$index_path" "$pointer_path" 2>/dev/null || echo "$index_path" > "$pointer_path"
+
+   echo ""
+   echo "Use: /context-open 1  or  /context-open pytest  or  /context-open A1B2"
    ```
 
 3. Show summary stats:
    ```bash
    echo ""
-   echo "=== Summary ==="
+   echo "────────────────────────"
    count=$(find .fewword/scratch/tool_outputs -maxdepth 1 -type f -name "*_exit*.txt" 2>/dev/null | wc -l | tr -d ' ')
    size=$(du -sh .fewword/scratch/tool_outputs 2>/dev/null | cut -f1 || echo "0")
-   echo "Files: $count, Size: $size"
-   echo ""
-   echo "Retrieval: cat <path> | Read the full output"
-   echo "Pin: /context-pin <id> | Prevent auto-cleanup"
+   echo "Total: $count files, $size"
    ```
 
 ## Usage Examples
 
-- `/context-recent` - Show last 10 offloaded outputs
+- `/context-recent` - Show last 10 offloaded outputs with numbers
+- `/context-open 1` - Open most recent output
+- `/context-open pytest` - Open latest pytest output
 - After compaction, use this to rediscover file pointers
-- Use the ID with `/context-pin` to preserve important outputs
