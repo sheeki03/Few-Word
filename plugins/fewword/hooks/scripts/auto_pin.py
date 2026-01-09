@@ -94,11 +94,13 @@ def should_auto_pin(
 
     # Check exit_codes
     exit_codes = auto_pin_config.get('exit_codes', [])
+    exit_codes = exit_codes if isinstance(exit_codes, (list, tuple, set)) else [exit_codes]
     if exit_codes and exit_code in exit_codes:
         return True, f"auto_pin.exit_codes ({exit_code})"
 
     # Check cmds
     cmds = auto_pin_config.get('cmds', [])
+    cmds = cmds if isinstance(cmds, (list, tuple, set)) else [cmds]
     if cmds and (cmd in cmds or cmd_group in cmds):
         return True, f"auto_pin.cmds ({cmd})"
 
