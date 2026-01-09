@@ -58,7 +58,7 @@ TEST_FILE_PATTERNS = [
     # JavaScript/TypeScript
     r'(\w+\.test\.[jt]sx?)',
     r'(\w+\.spec\.[jt]sx?)',
-    r'(__tests__/\S+)',
+    r'(__tests__/[A-Za-z0-9_.-]+\.[jt]sx?)',
 
     # Go
     r'(\w+_test\.go)',
