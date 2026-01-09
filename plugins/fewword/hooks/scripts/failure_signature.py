@@ -34,7 +34,7 @@ ERROR_PATTERNS = [
     (r'ReferenceError:', 'js_ref_error'),
 
     # Rust
-    (r"error\[E(\d+)\]", 'rust_error'),
+    (r"error\[(E\d+)\]", 'rust_error'),
     (r"panicked at", 'rust_panic'),
 
     # Go
