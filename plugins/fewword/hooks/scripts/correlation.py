@@ -40,7 +40,7 @@ except ImportError:
 
         lines = [l.strip() for l in content.split('\n') if l.strip()][-10:]
         normalized = [re.sub(r'\d+', 'N', l) for l in lines]
-        tail_hash = hashlib.md5('\n'.join(normalized).encode()).hexdigest()[:8]
+        tail_hash = hashlib.sha256('\n'.join(normalized).encode()).hexdigest()[:8]
 
         return {
             'error_types': error_types,
