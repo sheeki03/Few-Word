@@ -251,16 +251,16 @@ def compute_similarity(sig1: Dict, sig2: Dict) -> float:
     score = 0.0
 
     # Error types overlap (30%)
-    errors1 = set(sig1.get('error_types', []) or sig1.get('err', []))
-    errors2 = set(sig2.get('error_types', []) or sig2.get('err', []))
+    errors1 = set(sig1.get('error_types', []) or sig1.get('err', []) or [])
+    errors2 = set(sig2.get('error_types', []) or sig2.get('err', []) or [])
     if errors1 and errors2:
         overlap = len(errors1 & errors2)
         max_len = max(len(errors1), len(errors2))
         score += 0.3 * (overlap / max_len)
 
     # Test files overlap (40%)
-    files1 = set(sig1.get('test_files', []) or sig1.get('tst', []))
-    files2 = set(sig2.get('test_files', []) or sig2.get('tst', []))
+    files1 = set(sig1.get('test_files', []) or sig1.get('tst', []) or [])
+    files2 = set(sig2.get('test_files', []) or sig2.get('tst', []) or [])
     if files1 and files2:
         overlap = len(files1 & files2)
         max_len = max(len(files1), len(files2))
