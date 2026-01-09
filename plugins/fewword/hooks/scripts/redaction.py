@@ -189,8 +189,9 @@ class Redactor:
 
             try:
                 result = pattern.sub(make_replacement, result)
-            except (re.error, TypeError):
-                pass  # Skip on error
+            except (re.error, TypeError) as e:
+                import sys
+                print(f"[FewWord] Warning: Redaction pattern '{name}' failed during substitution: {e}", file=sys.stderr)
 
         return result, count
 
