@@ -234,10 +234,18 @@ def main():
 
         output_id = sys.argv[2]
         output_path = sys.argv[3]
-        exit_code = int(sys.argv[4])
+        try:
+            exit_code = int(sys.argv[4])
+        except ValueError:
+            print("Invalid exit code: expected integer")
+            sys.exit(1)
         cmd = sys.argv[5]
         cmd_group = sys.argv[6]
-        output_bytes = int(sys.argv[7])
+        try:
+            output_bytes = int(sys.argv[7])
+        except ValueError:
+            print("Invalid output_bytes: expected integer")
+            sys.exit(1)
         cwd = get_cwd()
 
         # Load config
