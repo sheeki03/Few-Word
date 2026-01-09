@@ -179,8 +179,10 @@ class Redactor:
 
                 # Handle backreferences like \1 (P1 fix: backrefs don't work with function replacement)
                 # Replace \1, \2, etc. with actual match groups
-                for i in range(1, (match.lastindex or 0) + 1):
-                    group_value = match.group(i) or ''
+                for i in range(1, pattern.groups + 1):
+                    group_value = match.group(i)
+                    if group_value is None:
+                        group_value = ''
                     repl = repl.replace(f'\\{i}', group_value)
 
                 return repl
