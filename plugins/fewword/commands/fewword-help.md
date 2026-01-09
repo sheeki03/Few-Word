@@ -24,7 +24,7 @@ FewWord is a context engineering plugin for Claude Code that automatically offlo
 
 **No configuration needed.** The plugin hooks into Claude Code's PreToolUse event and intercepts Bash commands automatically.
 
-## How It Works (v1.3 Tiered Offloading)
+## How It Works (v1.3.3 Tiered Offloading)
 
 | Output Size | What Happens |
 |-------------|--------------|
@@ -45,69 +45,144 @@ FAILED test_api.py::test_endpoint - TimeoutError
 2 failed, 48 passed in 12.34s
 ```
 
-## Available Commands
+## Available Commands (v1.3.3)
 
-### /fewword-stats
+### Retrieval Commands
 
-Show session statistics and estimated token savings.
+| Command | Description |
+|---------|-------------|
+| `/context-open <id>` | Retrieve output by ID, number, or command name |
+| `/context-recent` | Show recent outputs with numbered list |
+| `/context-search <pattern>` | Search across all outputs (with hard caps) |
+| `/context-diff <cmd>` | Compare two command outputs |
 
-**Shows:**
-- Outputs offloaded this session
-- Total bytes and estimated tokens saved
-- Breakdown by tier (inline, compact, preview)
+### Organization Commands
 
-### /context-open <id>
+| Command | Description |
+|---------|-------------|
+| `/context-pin <id>` | Pin output to prevent cleanup |
+| `/context-unpin <id>` | Unpin a pinned output |
+| `/context-tag <id> <tags>` | Add tags to output |
+| `/context-note <id> "note"` | Add notes to output |
 
-Retrieve an offloaded output by its ID.
+### Analysis Commands
 
-**Usage:**
+| Command | Description |
+|---------|-------------|
+| `/fewword-stats` | Token savings and session statistics |
+| `/context-timeline` | Visual session history |
+| `/context-correlate <id>` | Find related failures |
+
+### System Commands
+
+| Command | Description |
+|---------|-------------|
+| `/fewword-help` | This help information |
+| `/fewword-onboarding` | Interactive tutorial |
+| `/fewword-doctor` | System health check |
+| `/fewword-config` | Show effective configuration |
+| `/context-init` | Manual setup (usually automatic) |
+| `/context-cleanup` | View storage and clean up |
+
+---
+
+## Command Details
+
+### /context-open
+
+Retrieve an offloaded output with multiple selector options.
+
+```bash
+/context-open A1B2             # By hex ID
+/context-open 1                # By number from /context-recent
+/context-open pytest           # Latest output from 'pytest'
+/context-open --last           # Most recent output (any command)
+/context-open --last pytest    # Most recent pytest output
+/context-open --last-fail      # Most recent failed output
+/context-open --nth 2 pytest   # 2nd most recent pytest output
+
+# Output flags
+/context-open A1B2 --full      # Full content
+/context-open A1B2 --head 50   # First 50 lines
+/context-open A1B2 --tail 50   # Last 50 lines
+/context-open A1B2 --grep "pattern"  # Search within output
 ```
-/context-open A1B2C3D4
-```
-
-The ID is shown in the compact pointer: `[fw A1B2C3D4]`
 
 ### /context-recent
 
-Show recent offloaded outputs from the manifest. **Primary recovery path after context compaction.**
+Show recent offloaded outputs. **Primary recovery path after context compaction.**
 
-**Usage:**
-```
-/context-recent
-```
-
-Shows:
-- Last 10 offloaded outputs with ID, command, exit code, size
-- File status (exists or deleted)
-- LATEST aliases
-- Retrieval commands
-
-### /context-pin <id>
-
-Pin an output to prevent auto-cleanup. Pinned files are stored permanently.
-
-**Usage:**
-```
-/context-pin A1B2C3D4
+```bash
+/context-recent                # Last 10 outputs
+/context-recent --all          # All outputs
+/context-recent --pinned       # Pinned outputs only
+/context-recent --tag <tag>    # Filter by tag
 ```
 
-The ID comes from `/context-recent` or the compact pointer. Pinned files move to `.fewword/memory/pinned/`.
+### /context-search
 
-### /fewword-help
+Search across all outputs with hard caps to prevent context explosion.
 
-Show this help information (what you're reading now).
+```bash
+/context-search "AssertionError"
+/context-search "error" --cmd pytest
+/context-search "pattern" --since 24h
+/context-search "FAILED" --pinned-only
+/context-search "pattern" --full       # More results (still capped)
+```
 
-### /context-init
+**Hard caps:** 50 files, 2MB/file, 50 lines output
 
-Set up FewWord directory structure manually (usually not needed - SessionStart does this automatically).
+### /context-diff
 
-### /context-cleanup
+Compare two command outputs with noise stripping.
 
-View storage statistics and clean up old scratch files.
+```bash
+/context-diff pytest              # Diff last 2 pytest runs
+/context-diff A1B2 --prev         # Diff A1B2 vs previous
+/context-diff A1B2 C3D4           # Diff two specific outputs
+/context-diff pytest --stat       # Summary only (default)
+/context-diff pytest --full       # Full unified diff
+```
 
-### /context-search <term>
+### /fewword-stats
 
-Search through all offloaded context files.
+Show comprehensive statistics and token savings.
+
+```bash
+/fewword-stats                # Current session
+/fewword-stats --json         # Machine-readable
+/fewword-stats --all-time     # Across all sessions
+```
+
+### /context-timeline
+
+Visual timeline of session activity.
+
+```bash
+/context-timeline             # Current session
+/context-timeline --last 2h   # Last 2 hours
+/context-timeline --cmd pytest
+/context-timeline --failures
+```
+
+### /context-correlate
+
+Find related failures through pattern matching.
+
+```bash
+/context-correlate A1B2       # Find related failures
+/context-correlate --cluster  # Group failures by similarity
+```
+
+### /fewword-doctor
+
+Self-diagnostics with optional repair.
+
+```bash
+/fewword-doctor               # Health check
+/fewword-doctor --fix         # Attempt safe repairs
+```
 
 ---
 
@@ -124,15 +199,103 @@ Search through all offloaded context files.
 - Commands with existing redirects (`>`, `2>`, `| tee`)
 - Pipelines (`|`)
 - Commands under 10 characters
+- Commands matching deny list
 
 ## Smart Retention
 
 FewWord uses intelligent cleanup based on command exit codes:
 - **Exit 0 (success)**: Retained for 24 hours
-- **Exit != 0 (failure)**: Retained for 48 hours (you might need error logs later!)
-- **LRU eviction**: When scratch exceeds 250MB, oldest files are removed first
-- **LATEST aliases**: Never auto-deleted, always point to most recent output
-- Cleanup runs on SessionStart and after each offload
+- **Exit != 0 (failure)**: Retained for 48 hours
+- **LRU eviction**: When scratch exceeds 250MB
+- **LATEST aliases**: Always point to most recent output
+- **Pinned outputs**: Never auto-deleted
+
+## Security Features (v1.3.3)
+
+### Secret Redaction (ON by default)
+
+Secrets are redacted BEFORE writing to disk:
+- AWS keys (AKIA...)
+- GitHub tokens (ghp_..., gho_...)
+- Bearer tokens
+- API keys
+- Private keys
+- Connection strings with passwords
+
+### Do Not Store Mode
+
+Configure commands that should never be stored:
+```toml
+# .fewwordrc.toml
+[deny]
+cmds = ["vault", "1password", "aws"]
+patterns = ["--password", "--token"]
+```
+
+## Auto-Pin Rules (v1.3.3)
+
+Automatically pin outputs based on rules:
+```toml
+[auto_pin]
+on_fail = true                # Pin all failures
+match = "FATAL|panic"         # Pin if matches pattern
+cmds = ["pytest"]             # Pin specific commands
+size_min = 102400             # Pin outputs > 100KB
+max_files = 50                # Cap total auto-pinned
+```
+
+## Configuration (v1.3.3)
+
+### Config Files
+
+FewWord supports TOML (Python 3.11+) or JSON config files:
+- **Repo config:** `.fewwordrc.toml` or `.fewwordrc.json`
+- **User config:** `~/.fewwordrc.toml` or `~/.fewwordrc.json`
+
+**Precedence (higher wins):**
+1. Environment variables
+2. Repo config
+3. User config
+4. Built-in defaults
+
+### Example .fewwordrc.toml
+
+```toml
+[thresholds]
+inline_max = 256
+preview_min = 2048
+
+[retention]
+# P3 fix #24: Update to match documented defaults (24h/48h)
+success_min = 1440   # 24 hours (default)
+fail_min = 2880      # 48 hours (default)
+
+[auto_pin]
+on_fail = true
+cmds = ["pytest", "cargo test"]
+
+[redaction]
+enabled = true
+patterns = ["MY_SECRET_.*"]
+
+[deny]
+cmds = ["vault", "1password"]
+
+[aliases]
+pytest = ["py.test", "python -m pytest"]
+npm = ["pnpm", "yarn", "bun"]
+```
+
+### Environment Variables
+
+```bash
+FEWWORD_INLINE_MAX=512
+FEWWORD_PREVIEW_MIN=4096
+FEWWORD_AUTO_PIN_FAIL=1
+FEWWORD_DENY_CMDS=vault,1password
+FEWWORD_REDACT_ENABLED=1
+FEWWORD_DISABLE=1              # Disable all offloading
+```
 
 ## Escape Hatch
 
@@ -146,50 +309,24 @@ touch .fewword/DISABLE_OFFLOAD
 export FEWWORD_DISABLE=1
 ```
 
-## Privacy
-
-FewWord logs only metadata (tool names, timestamps), never your actual data:
-- Command arguments: NOT logged (may contain secrets)
-- Output content: Written to local disk only, never transmitted
-- MCP tools: Only parameter keys logged, not values
-
 ## Directory Structure
 
 ```
 .fewword/
 ├── scratch/           # Ephemeral (auto-cleaned by TTL + LRU)
-│   ├── tool_outputs/  # Command outputs (24h/48h retention)
-│   │   ├── LATEST.txt           # Symlink to most recent
-│   │   └── LATEST_{cmd}.txt     # Per-command symlink
-│   └── subagents/     # Agent workspaces
-├── memory/            # Persistent (never auto-cleaned)
+│   └── tool_outputs/  # Command outputs
+├── memory/            # Persistent
 │   ├── plans/         # Archived plans
-│   └── pinned/        # Pinned outputs (/context-pin)
+│   └── pinned/        # Pinned outputs
 └── index/             # Metadata
-    └── tool_outputs.jsonl  # Append-only manifest
-```
-
-## Configuration Defaults (v1.3)
-
-| Setting | Value |
-|---------|-------|
-| Inline threshold | 512B |
-| Preview threshold | 4KB |
-| Preview lines | 5 (tail only, failures) |
-| Success retention (exit 0) | 24 hours |
-| Failure retention (exit != 0) | 48 hours |
-| Scratch max size | 250MB (LRU eviction) |
-
-**Environment overrides:**
-```bash
-FEWWORD_INLINE_MAX=512              # Below this: inline
-FEWWORD_PREVIEW_MIN=4096            # Above this: add preview
-FEWWORD_OPEN_CMD=/context-open      # Command in pointer
-FEWWORD_SHOW_PATH=1                 # Append path to pointer
-FEWWORD_VERBOSE_POINTER=1           # Old verbose format
+    ├── tool_outputs.jsonl    # Append-only manifest
+    ├── session.json          # Current session info
+    └── .recent_index         # Numbered lookup index
 ```
 
 ## Learn More
 
+- Tutorial: `/fewword-onboarding`
+- Health check: `/fewword-doctor`
+- Current config: `/fewword-config`
 - GitHub: https://github.com/sheeki03/Few-Word
-- Inspired by: [Manus](https://manus.im/blog/Context-Engineering-for-AI-Agents-Lessons-from-Building-Manus), [LangChain](https://blog.langchain.com/how-agents-can-use-filesystems-for-context-engineering/)

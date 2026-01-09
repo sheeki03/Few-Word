@@ -2,6 +2,43 @@
 
 All notable changes to FewWord will be documented in this file.
 
+## [1.3.3] - 2025-01-09
+
+### Security Hardening
+- **Path traversal protection**: All file operations now validate paths are within working directory
+  - `context-diff`: Validates manifest-supplied paths before reading
+  - `context-unpin`: Validates paths before deletion
+  - `context-tag`: Validates `FEWWORD_CWD` environment variable
+- **Bounded file reads**: `context-correlate` now limits reads to 2MB to prevent memory exhaustion
+- **Redaction test mode**: Secrets masked by default, requires `--show-matches` flag to reveal
+
+### Redaction Fixes
+- **Fixed PRIVATE_KEY_CONTENT regex**: Replaced variable-length lookbehind (Python `re` incompatible) with working pattern
+- **Fixed HEX_SECRET pattern**: Changed non-capturing group to capturing for proper replacement
+- **Fixed length calculation**: Uses `match.lastindex` instead of always `group(1)`
+
+### Manifest Integrity
+- **Robust JSON escaping**: Uses `jq -Rs` when available, proper fallback escaping for tabs, newlines, control chars
+- **Config loading safety**: Wrapped in try/except with fallback to defaults on malformed configs
+- **Directory creation**: Ensures `.fewword/index/` exists before manifest writes
+- **Write error handling**: Clear error messages with manifest path on IO failures
+
+### Deterministic Output
+- **Signature extraction**: Uses `sorted(set(...))` instead of `list(set(...))` for reproducible results
+- **Explanation output**: Uses `min()` instead of `list()[0]` for deterministic element selection
+
+### Error Handling Improvements
+- **Explicit encoding**: All `read_text()` calls use `encoding='utf-8', errors='replace'`
+- **Tag validation**: Remove path validates tags same as add path
+- **Config source reporting**: Reports actual loaded file path, not just existence check
+- **Exit code parsing**: Handles negative exit codes correctly (was dropping them)
+- **Exception types**: Fixed `auto_pin.py` catching wrong exception type
+
+### Documentation
+- **Fixed example numbering** in `fewword-config.md` (was 1,2,4 → now 1,2,3,4)
+- **Fixed ID truncation** in `context-search.md` tip (4-char → 8-char to match output)
+- **Fixed retention defaults** in `fewword-help.md` (prose now matches code: 24h/48h)
+
 ## [1.3.1] - 2025-01-09
 
 ### Added
