@@ -163,6 +163,7 @@ def perform_auto_pin(
 
     # P1 fix #27: json.dumps() never raises JSONDecodeError - catch TypeError for non-serializable objects
     try:
+        manifest.parent.mkdir(parents=True, exist_ok=True)
         with open(manifest, 'a') as f:
             f.write(json.dumps(pin_entry) + '\n')
         return True
