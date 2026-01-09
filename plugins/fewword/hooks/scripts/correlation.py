@@ -380,6 +380,10 @@ def main():
                 if len(entries) > 5:
                     print(f"  ...and {len(entries)-5} more")
 
+    elif command == 'find':
+        print("Usage: find <id>")
+        sys.exit(1)
+
     else:
         print(f"Unknown command: {command}")
         sys.exit(1)
