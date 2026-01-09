@@ -174,8 +174,11 @@ def get_entry_signature(entry: Dict, cwd: str) -> Optional[Dict]:
         }
 
     # Compute from file
-    path = Path(cwd) / entry.get('path', '')
-    if not path.exists():
+    path_str = entry.get('path')
+    if not path_str:
+        return None
+    path = Path(cwd) / path_str
+    if not path.is_file():
         return None
 
     try:
@@ -294,8 +297,8 @@ def get_correlation_summary(correlations: List[Dict]) -> str:
 
     count = len(correlations)
     top = correlations[0]
-    top_id = top['entry'].get('id', '????')[:4]
-    top_reason = top['reason'].split(',')[0]  # First reason only
+    top_id = top.get('entry', {}).get('id', '????')[:4]
+    top_reason = (str(top.get('reason', ''))).split(',')[0] or 'unknown'
 
     if count == 1:
         return f"Similar to [{top_id}] ({top_reason})"

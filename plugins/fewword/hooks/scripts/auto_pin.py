@@ -94,11 +94,13 @@ def should_auto_pin(
 
     # Check exit_codes
     exit_codes = auto_pin_config.get('exit_codes', [])
+    exit_codes = exit_codes if isinstance(exit_codes, (list, tuple, set)) else [exit_codes]
     if exit_codes and exit_code in exit_codes:
         return True, f"auto_pin.exit_codes ({exit_code})"
 
     # Check cmds
     cmds = auto_pin_config.get('cmds', [])
+    cmds = cmds if isinstance(cmds, (list, tuple, set)) else [cmds]
     if cmds and (cmd in cmds or cmd_group in cmds):
         return True, f"auto_pin.cmds ({cmd})"
 
@@ -234,10 +236,18 @@ def main():
 
         output_id = sys.argv[2]
         output_path = sys.argv[3]
-        exit_code = int(sys.argv[4])
+        try:
+            exit_code = int(sys.argv[4])
+        except ValueError:
+            print("Invalid exit code: expected integer")
+            sys.exit(1)
         cmd = sys.argv[5]
         cmd_group = sys.argv[6]
-        output_bytes = int(sys.argv[7])
+        try:
+            output_bytes = int(sys.argv[7])
+        except ValueError:
+            print("Invalid output_bytes: expected integer")
+            sys.exit(1)
         cwd = get_cwd()
 
         # Load config
