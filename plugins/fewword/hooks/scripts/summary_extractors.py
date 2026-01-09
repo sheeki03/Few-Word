@@ -237,7 +237,10 @@ def resolve_cmd_group(cmd_token: str, aliases: Dict[str, list]) -> str:
     for canonical, patterns in aliases.items():
         if cmd_token == canonical:
             return canonical
-        if cmd_token in patterns:
+        if isinstance(patterns, str):
+            if cmd_token == patterns:
+                return canonical
+        elif cmd_token in patterns:
             return canonical
     return cmd_token  # Self is canonical if no alias
 
