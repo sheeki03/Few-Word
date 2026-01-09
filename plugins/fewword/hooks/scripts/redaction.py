@@ -68,8 +68,8 @@ BUILTIN_PATTERNS: List[Tuple[str, str, str]] = [
      '-----BEGIN PRIVATE KEY----- [REDACTED]'),
     # P1 fix #7: Replace variable-length lookbehind with non-lookbehind pattern
     # Original used (?<=-----BEGIN\s) which Python's re cannot compile
-    ('PRIVATE_KEY_CONTENT', r'-----BEGIN\s+(RSA\s+)?PRIVATE\s+KEY-----[\s\S]*?-----END',
-     '-----BEGIN PRIVATE KEY----- [REDACTED:KEY_CONTENT] -----END'),
+    ('PRIVATE_KEY_CONTENT', r'-----BEGIN\s+(RSA\s+)?PRIVATE\s+KEY-----[\s\S]*?-----END\s+(RSA\s+)?PRIVATE\s+KEY-----',
+     '-----BEGIN PRIVATE KEY----- [REDACTED:KEY_CONTENT] -----END PRIVATE KEY-----'),
 
     # NPM tokens
     ('NPM_TOKEN', r'npm_[a-zA-Z0-9]{36}', '[REDACTED:NPM_TOKEN]'),
