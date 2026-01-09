@@ -174,8 +174,11 @@ def get_entry_signature(entry: Dict, cwd: str) -> Optional[Dict]:
         }
 
     # Compute from file
-    path = Path(cwd) / entry.get('path', '')
-    if not path.exists():
+    path_str = entry.get('path')
+    if not path_str:
+        return None
+    path = Path(cwd) / path_str
+    if not path.is_file():
         return None
 
     try:
