@@ -91,7 +91,7 @@ DEFAULTS = {
 
 def _deep_merge(base: Dict, overlay: Dict) -> Dict:
     """Deep merge overlay into base, returning new dict."""
-    result = base.copy()
+    result = copy.deepcopy(base)
     for key, value in overlay.items():
         if key in result and isinstance(result[key], dict) and isinstance(value, dict):
             result[key] = _deep_merge(result[key], value)
