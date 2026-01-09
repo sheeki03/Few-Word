@@ -96,8 +96,8 @@ BUILTIN_PATTERNS: List[Tuple[str, str, str]] = [
      '[REDACTED:JWT_TOKEN]'),
 
     # SSH private key content
-    ('SSH_PRIVATE_KEY', r'-----BEGIN\s+OPENSSH\s+PRIVATE\s+KEY-----[\s\S]*?-----END',
-     '-----BEGIN OPENSSH PRIVATE KEY----- [REDACTED] -----END'),
+    ('SSH_PRIVATE_KEY', r'-----BEGIN\s+OPENSSH\s+PRIVATE\s+KEY-----[\s\S]*?-----END\s+OPENSSH\s+PRIVATE\s+KEY-----',
+     '-----BEGIN OPENSSH PRIVATE KEY----- [REDACTED] -----END OPENSSH PRIVATE KEY-----'),
 ]
 
 
