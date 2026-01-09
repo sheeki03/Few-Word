@@ -96,8 +96,8 @@ BUILTIN_PATTERNS: List[Tuple[str, str, str]] = [
      '[REDACTED:JWT_TOKEN]'),
 
     # SSH private key content
-    ('SSH_PRIVATE_KEY', r'-----BEGIN\s+OPENSSH\s+PRIVATE\s+KEY-----[\s\S]*?-----END',
-     '-----BEGIN OPENSSH PRIVATE KEY----- [REDACTED] -----END'),
+    ('SSH_PRIVATE_KEY', r'-----BEGIN\s+OPENSSH\s+PRIVATE\s+KEY-----[\s\S]*?-----END\s+OPENSSH\s+PRIVATE\s+KEY-----',
+     '-----BEGIN OPENSSH PRIVATE KEY----- [REDACTED] -----END OPENSSH PRIVATE KEY-----'),
 ]
 
 
@@ -179,8 +179,10 @@ class Redactor:
 
                 # Handle backreferences like \1 (P1 fix: backrefs don't work with function replacement)
                 # Replace \1, \2, etc. with actual match groups
-                for i in range(1, (match.lastindex or 0) + 1):
-                    group_value = match.group(i) or ''
+                for i in range(1, pattern.groups + 1):
+                    group_value = match.group(i)
+                    if group_value is None:
+                        group_value = ''
                     repl = repl.replace(f'\\{i}', group_value)
 
                 return repl
@@ -224,7 +226,7 @@ def create_redactor_from_config(config: dict) -> Redactor:
     Returns:
         Configured Redactor instance
     """
-    redaction_config = config.get('redaction', {})
+    redaction_config = (config or {}).get('redaction', {})
     return Redactor(
         enabled=redaction_config.get('enabled', True),
         custom_patterns=redaction_config.get('patterns', []),
