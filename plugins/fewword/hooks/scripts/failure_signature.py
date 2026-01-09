@@ -354,11 +354,20 @@ def main():
         print(f"Sig2: {sig2}")
     else:
         # Extract signature from file (P2 fix: add file I/O guards)
+        # Handle --json flag appearing before filename
+        if sys.argv[1] == '--json':
+            if len(sys.argv) < 3:
+                print("Usage: failure_signature.py <file> [--json]")
+                print("       failure_signature.py --json <file>")
+                sys.exit(1)
+            file_idx = 2
+        else:
+            file_idx = 1
         try:
-            with open(sys.argv[1], 'r') as f:
+            with open(sys.argv[file_idx], 'r') as f:
                 content = f.read()
         except (IOError, OSError) as e:
-            print(f"Error reading {sys.argv[1]}: {e}")
+            print(f"Error reading {sys.argv[file_idx]}: {e}")
             sys.exit(1)
 
         signature = extract_failure_signature(content)
