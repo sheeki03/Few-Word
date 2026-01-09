@@ -118,7 +118,7 @@ def _load_json(path: Path) -> Optional[Dict]:
     if not path.exists():
         return None
     try:
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception:
         return None
