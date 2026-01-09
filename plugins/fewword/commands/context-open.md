@@ -1,9 +1,9 @@
 ---
-description: "Open/retrieve an offloaded output by ID"
+description: "Open/retrieve an offloaded output by ID or shortcut"
 arguments:
   - name: selector
-    description: "ID (hex), number from /context-recent, or command name"
-    required: true
+    description: "ID (hex), number from /context-recent, command name, or use --last flags"
+    required: false
 ---
 
 # Context Open
@@ -14,15 +14,22 @@ Retrieve offloaded output with a "peek" preview by default. Only dumps full cont
 
 ```
 /context-open A1B2              # By hex ID
-/context-open 1                  # By number from /context-recent
-/context-open pytest             # Latest output from 'pytest' command
+/context-open 1                 # By number from /context-recent
+/context-open pytest            # Latest output from 'pytest' command
 
-Flags:
-  --full                         # Print entire file
-  --head 50                      # Print first 50 lines
-  --tail 50                      # Print last 50 lines
-  --grep "pattern"               # Search for pattern (max 50 lines)
-  --grep-i "pattern"             # Case-insensitive search
+# NEW: Shortcut flags (v1.3.3)
+/context-open --last            # Most recent output (any command)
+/context-open --last pytest     # Most recent pytest output
+/context-open --last-fail       # Most recent failed output (exit != 0)
+/context-open --last-fail pytest  # Most recent failed pytest
+/context-open --nth 2 pytest    # 2nd most recent pytest output
+
+Output flags:
+  --full                        # Print entire file
+  --head 50                     # Print first 50 lines
+  --tail 50                     # Print last 50 lines
+  --grep "pattern"              # Search for pattern (max 50 lines)
+  --grep-i "pattern"            # Case-insensitive search
 ```
 
 ## Default Output (Peek)
@@ -59,9 +66,50 @@ Hint: --full | --head 50 | --tail 50 | --grep "pattern"
    grep_i=false
    selector=""
 
+   # NEW: Shortcut flags (v1.3.3)
+   use_last=false
+   use_last_fail=false
+   nth=1
+   cmd_filter=""
+
    # Parse arguments with while loop (for/shift doesn't work correctly)
    while [ $# -gt 0 ]; do
      case "$1" in
+       --last)
+         use_last=true
+         # Check if next arg is a command filter (not a flag)
+         if [ -n "$2" ] && [ "${2#-}" = "$2" ]; then
+           cmd_filter="$2"
+           shift
+         fi
+         shift
+         ;;
+       --last-fail)
+         use_last_fail=true
+         # Check if next arg is a command filter (not a flag)
+         if [ -n "$2" ] && [ "${2#-}" = "$2" ]; then
+           cmd_filter="$2"
+           shift
+         fi
+         shift
+         ;;
+       --nth)
+         if [ -z "$2" ] || [ "${2#-}" != "$2" ]; then
+           echo "Error: --nth requires a number (e.g., --nth 2)"
+           exit 1
+         fi
+         # Validate numeric (P1 fix: --nth accepts non-numeric causing confusing errors)
+         case "$2" in
+           ''|*[!0-9]*) echo "Error: --nth requires a positive integer, got '$2'"; exit 1 ;;
+         esac
+         nth="$2"
+         # Check if next arg is a command filter (not a flag)
+         if [ -n "$3" ] && [ "${3#-}" = "$3" ]; then
+           cmd_filter="$3"
+           shift
+         fi
+         shift 2
+         ;;
        --full)
          full=true
          shift
@@ -109,27 +157,89 @@ Hint: --full | --head 50 | --tail 50 | --grep "pattern"
      esac
    done
 
-   if [ -z "$selector" ]; then
+   # Validate: need either selector OR shortcut flag
+   if [ -z "$selector" ] && [ "$use_last" = false ] && [ "$use_last_fail" = false ] && [ "$nth" -eq 1 ]; then
      echo "Error: No selector provided."
-     echo "Usage: /context-open <id|number|cmd> [--full|--head N|--tail N|--grep pattern]"
+     echo ""
+     echo "Usage:"
+     echo "  /context-open <id|number|cmd>          # By ID, number, or command name"
+     echo "  /context-open --last [cmd]             # Most recent (optionally filtered)"
+     echo "  /context-open --last-fail [cmd]        # Most recent failure"
+     echo "  /context-open --nth N [cmd]            # Nth most recent"
+     echo ""
+     echo "Output flags: --full | --head N | --tail N | --grep pattern"
      exit 1
    fi
    ```
 
-2. Resolve selector to hex ID:
+2. Resolve selector to hex ID (with shortcut support):
    ```bash
-   # Use Python helper for cross-platform resolution
-   id=$(python3 "$helper" resolve "$selector" "$manifest" "$index_path" 2>/dev/null)
+   # Handle shortcut flags first
+   if [ "$use_last" = true ] || [ "$use_last_fail" = true ] || [ "$nth" -gt 1 ]; then
+     # Build Python command to find Nth matching entry
+     id=$(python3 -c "
+import json
+import sys
 
-   if [ -z "$id" ]; then
-     echo "Error: Could not resolve '$selector'"
-     echo ""
-     echo "Try:"
-     echo "  - Run /context-recent to see available outputs"
-     echo "  - Use a number (1, 2, 3) from the list"
-     echo "  - Use an 8-char hex ID (e.g., A1B2C3D4)"
-     echo "  - Use a command name (e.g., pytest)"
-     exit 1
+manifest_path = '$manifest'
+cmd_filter = '$cmd_filter'
+fail_only = $( [ "$use_last_fail" = true ] && echo 'True' || echo 'False' )
+nth = $nth
+
+# Read manifest in reverse to find Nth match
+entries = []
+try:
+    with open(manifest_path, 'r') as f:
+        for line in f:
+            try:
+                entry = json.loads(line)
+                if entry.get('type') == 'offload':
+                    entries.append(entry)
+            except (ValueError, KeyError, TypeError):
+                pass
+except (FileNotFoundError, IOError):
+    pass
+
+# Search in reverse (newest first)
+matches = 0
+for entry in reversed(entries):
+    # Apply command filter
+    if cmd_filter and entry.get('cmd') != cmd_filter:
+        continue
+    # Apply failure filter
+    if fail_only and entry.get('exit_code', 0) == 0:
+        continue
+    matches += 1
+    if matches == nth:
+        print(entry.get('id', ''))
+        break
+" 2>/dev/null)
+
+     if [ -z "$id" ]; then
+       filter_desc=""
+       [ -n "$cmd_filter" ] && filter_desc=" for '$cmd_filter'"
+       [ "$use_last_fail" = true ] && filter_desc="$filter_desc with failures"
+       [ "$nth" -gt 1 ] && filter_desc="$filter_desc (nth=$nth)"
+       echo "Error: No matching output found$filter_desc"
+       echo ""
+       echo "Try /context-recent to see available outputs"
+       exit 1
+     fi
+   else
+     # Standard selector resolution
+     id=$(python3 "$helper" resolve "$selector" "$manifest" "$index_path" 2>/dev/null)
+
+     if [ -z "$id" ]; then
+       echo "Error: Could not resolve '$selector'"
+       echo ""
+       echo "Try:"
+       echo "  - Run /context-recent to see available outputs"
+       echo "  - Use a number (1, 2, 3) from the list"
+       echo "  - Use an 8-char hex ID (e.g., A1B2C3D4)"
+       echo "  - Use a command name (e.g., pytest)"
+       echo "  - Use --last, --last-fail, or --nth flags"
+       exit 1
+     fi
    fi
    ```
 

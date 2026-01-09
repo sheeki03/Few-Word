@@ -240,7 +240,7 @@ The plugin conservatively skips these commands:
 
 ## Configuration
 
-### Defaults (v1.3)
+### Defaults (v1.3.3)
 
 | Setting | Value |
 |---------|-------|
@@ -275,6 +275,16 @@ FEWWORD_SCRATCH_MAX_MB=250          # LRU cap
 ---
 
 ## Privacy & Security
+
+### Security Hardening (v1.3.3)
+
+| Protection | What It Does |
+|------------|--------------|
+| **Path Traversal Prevention** | All file operations validate paths stay within working directory |
+| **Bounded File Reads** | Large files (>2MB) skipped to prevent memory exhaustion |
+| **Secret Redaction** | AWS keys, GitHub tokens, API keys auto-redacted before writing to disk |
+| **Test Mode Safety** | Matched secrets masked by default (use `--show-matches` to reveal) |
+| **Manifest Integrity** | Robust JSON escaping prevents corruption from special characters |
 
 ### Bash Commands
 
