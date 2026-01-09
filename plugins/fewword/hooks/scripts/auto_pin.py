@@ -106,6 +106,10 @@ def should_auto_pin(
 
     # Check size_min
     size_min = auto_pin_config.get('size_min', 0)
+    try:
+        size_min = int(size_min)
+    except (ValueError, TypeError):
+        size_min = 0
     if size_min and output_bytes >= size_min:
         return True, f"auto_pin.size_min ({output_bytes} >= {size_min})"
 
