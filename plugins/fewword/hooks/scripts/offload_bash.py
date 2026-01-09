@@ -5,7 +5,7 @@ PreToolUse hook: Rewrite Bash commands to offload outputs to filesystem.
 Input (stdin): JSON with tool_name, tool_input, cwd, session_id
 Output (stdout): JSON with hookSpecificOutput containing updatedInput
 
-v1.3 features:
+v1.3.1 features:
 - Tiered offloading: inline (<512B), compact pointer (512B-4KB), preview (>4KB)
 - Ultra-compact pointer (~35 tokens)
 - Smart preview: only for failures (exit != 0)
@@ -13,6 +13,19 @@ v1.3 features:
 - Exit code in filename for smart retention
 - Manifest writing (append-only)
 - LATEST symlinks for easy retrieval
+- Optional peek preview on Tier 2 (FEWWORD_PEEK_ON_POINTER=1)
+
+Environment variables:
+- FEWWORD_INLINE_MAX: Max bytes for inline output (default: 512)
+- FEWWORD_PREVIEW_MIN: Min bytes for preview tier (default: 4096)
+- FEWWORD_PREVIEW_LINES: Lines in Tier 3 preview (default: 5)
+- FEWWORD_PEEK_ON_POINTER: Enable peek preview on Tier 2 failures (default: 0)
+- FEWWORD_PEEK_TIER2_LINES: Lines in Tier 2 peek (default: 2)
+- FEWWORD_PEEK_TIER3_LINES: Lines in Tier 3 peek when opt-in (default: 5)
+- FEWWORD_OPEN_CMD: Command to show in pointer hint (default: /context-open)
+- FEWWORD_SHOW_PATH: Append file path to pointer (default: 0)
+- FEWWORD_VERBOSE_POINTER: Use verbose pointer format (default: 0)
+- FEWWORD_DISABLE: Disable all offloading (default: 0)
 """
 
 import json
@@ -39,6 +52,11 @@ PREVIEW_LINE_MAX = 200  # truncate long preview lines
 OPEN_CMD = os.environ.get('FEWWORD_OPEN_CMD', '/context-open')   # retrieval command
 SHOW_PATH = os.environ.get('FEWWORD_SHOW_PATH', '0') == '1'      # append path to pointer
 VERBOSE_POINTER = os.environ.get('FEWWORD_VERBOSE_POINTER', '0') == '1'  # old v2.0 format
+
+# Opt-in peek preview on pointer (shows tail on failures)
+PEEK_ON_POINTER = os.environ.get('FEWWORD_PEEK_ON_POINTER', '0') == '1'
+PEEK_TIER2_LINES = _safe_int('FEWWORD_PEEK_TIER2_LINES', 2)  # For 512B-4KB on failure
+PEEK_TIER3_LINES = _safe_int('FEWWORD_PEEK_TIER3_LINES', 5)  # For >4KB on failure
 
 # Interactive commands that should NEVER be intercepted
 INTERACTIVE_COMMANDS = {
@@ -262,9 +280,20 @@ if [ "${{__fw_bytes:-0}}" -lt {INLINE_MAX} ]; then
   cat "$__fw_out"
   rm -f "$__fw_out"
 elif [ "${{__fw_bytes:-0}}" -lt {PREVIEW_MIN} ]; then
-  # TIER 2 - COMPACT: pointer only, no preview
+  # TIER 2 - COMPACT: pointer + optional peek preview (failures only)
   echo "$__fw_pointer"
+'''
 
+        # Add peek preview for Tier 2 if PEEK_ON_POINTER is enabled
+        if PEEK_ON_POINTER:
+            wrapper += f'''
+  # Show peek preview only for failures (FEWWORD_PEEK_ON_POINTER=1)
+  if [ "$__fw_exit" -ne 0 ]; then
+    tail -{PEEK_TIER2_LINES} "$__fw_out" | cut -c1-{PREVIEW_LINE_MAX}
+  fi
+'''
+
+        wrapper += f'''
   # Write manifest entry (append-only)
   __fw_now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   printf '{{"type":"offload","id":"%s","session_id":"%s","created_at":"%s","cmd":"%s","exit_code":%d,"bytes":%d,"lines":%d,"path":"%s"}}\\n' \\
@@ -281,8 +310,8 @@ else
 
   # Show preview only for failures (exit != 0)
   if [ "$__fw_exit" -ne 0 ]; then
-    # Plain tail - last {PREVIEW_LINES} lines, truncated to {PREVIEW_LINE_MAX} chars
-    tail -{PREVIEW_LINES} "$__fw_out" | cut -c1-{PREVIEW_LINE_MAX}
+    # Plain tail - last {PEEK_TIER3_LINES if PEEK_ON_POINTER else PREVIEW_LINES} lines, truncated to {PREVIEW_LINE_MAX} chars
+    tail -{PEEK_TIER3_LINES if PEEK_ON_POINTER else PREVIEW_LINES} "$__fw_out" | cut -c1-{PREVIEW_LINE_MAX}
   fi
 
   # Write manifest entry (append-only)

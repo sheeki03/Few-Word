@@ -2,6 +2,30 @@
 
 All notable changes to FewWord will be documented in this file.
 
+## [1.3.1] - 2025-01-09
+
+### Added
+- **Peek-first retrieval**: `/context-open` now shows head 3 + tail 5 by default (~60 tokens)
+- **Flags for `/context-open`**:
+  - `--full` - Print entire file
+  - `--head N` - Print first N lines
+  - `--tail N` - Print last N lines
+  - `--grep "pattern"` - Search with output cap (50 lines / 4KB)
+  - `--grep-i "pattern"` - Case-insensitive search
+- **Numbered indexes**: `/context-recent` shows numbered list with age
+- **Multi-mode ID resolution**: Use number (`1`), hex ID (`A1B2`), or command name (`pytest`)
+- **Cross-platform age calculation**: Python stdlib (works on macOS, Linux, Windows)
+- **Session-scoped index**: `.recent_index_<session_id>` with Windows-safe pointer fallback
+- **Opt-in peek on pointer**: `FEWWORD_PEEK_ON_POINTER=1` adds tail preview to Tier 2 failures
+
+### Changed
+- `/context-open` defaults to peek instead of full cat (reduces token cost from ~500+ to ~60)
+- Grep output capped at 50 lines / 4KB to prevent context explosion
+- Flag parsing uses proper `while [ $# -gt 0 ]` loop with missing-value guards
+
+### Added (new file)
+- `hooks/scripts/context_helpers.py` - Cross-platform helpers for age + ID resolution
+
 ## [1.3.0] - 2025-01-09
 
 ### Added
