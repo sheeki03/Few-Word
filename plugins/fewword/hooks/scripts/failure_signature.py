@@ -322,6 +322,10 @@ def main():
         print("       failure_signature.py --compare <file1> <file2>")
         sys.exit(1)
 
+    if sys.argv[1] == '--compare' and len(sys.argv) < 4:
+        print("Usage: failure_signature.py --compare <file1> <file2>")
+        sys.exit(1)
+
     if sys.argv[1] == '--compare' and len(sys.argv) >= 4:
         # Compare two files (P2 fix: add file I/O guards)
         try:
