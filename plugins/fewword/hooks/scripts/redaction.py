@@ -224,7 +224,7 @@ def create_redactor_from_config(config: dict) -> Redactor:
     Returns:
         Configured Redactor instance
     """
-    redaction_config = config.get('redaction', {})
+    redaction_config = (config or {}).get('redaction', {})
     return Redactor(
         enabled=redaction_config.get('enabled', True),
         custom_patterns=redaction_config.get('patterns', []),
