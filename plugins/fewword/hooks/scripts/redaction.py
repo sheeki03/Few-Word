@@ -204,7 +204,12 @@ class Redactor:
             if found:
                 for match in found:
                     if isinstance(match, tuple):
-                        match = match[-1] if match else ''
+                        for v in reversed(match):
+                            if v:
+                                match = v
+                                break
+                        else:
+                            continue
                     matches.append((name, match))
         return matches
 
