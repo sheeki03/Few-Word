@@ -406,3 +406,4 @@ Comparing outputs:
 - Noise stripping removes: ANSI colors, absolute paths, repeated whitespace
 - `--ignore-timing` also strips timestamps and durations
 - Compares by cmd_group if available (so npm/yarn/pnpm can be compared)
+- **Tool outputs only**: Diff only works with offload entries (command outputs). Manual and export entries are not supported - they lack the command/exit_code semantics needed for meaningful comparison.

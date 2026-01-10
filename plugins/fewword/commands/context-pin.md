@@ -30,8 +30,8 @@ Pin an offloaded output to permanent storage. Pinned files are never auto-delete
      exit 1
    fi
 
-   # Find the offload entry for this ID (fixed-string match)
-   entry=$(grep -iF "\"id\":\"$id\"" "$manifest" | grep '"type":"offload"' | tail -1)
+   # Find the offload/manual/export entry for this ID (fixed-string match)
+   entry=$(grep -iF "\"id\":\"$id\"" "$manifest" | grep -E '"type":"(offload|manual|export)"' | tail -1)
 
    if [ -z "$entry" ]; then
      echo "Error: ID '$id' not found in manifest"

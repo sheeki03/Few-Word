@@ -86,6 +86,18 @@ DEFAULTS = {
         'max_mb': 50,  # Rotate when manifest exceeds this size
         'keep_rotated': 5,  # Number of rotated manifests to keep
     },
+    'mcp': {
+        'log': {
+            'enabled': True,
+            'allowlist': [],  # Empty = all tools logged
+            'denylist': [],   # Glob patterns like "mcp__corridor__*"
+        },
+        'clamp': {
+            'enabled': True,
+            'allowlist': [],  # Empty = all tools clamped
+            'denylist': [],   # Glob patterns like "mcp__internal__*"
+        },
+    },
 }
 
 
@@ -174,6 +186,12 @@ def _env_to_config() -> Dict:
     - FEWWORD_PEEK_ON_POINTER -> pointer.peek_on_pointer
     - FEWWORD_PEEK_TIER2_LINES -> pointer.peek_tier2_lines
     - FEWWORD_PEEK_TIER3_LINES -> pointer.peek_tier3_lines
+    - FEWWORD_MCP_LOG_ENABLED -> mcp.log.enabled
+    - FEWWORD_MCP_LOG_ALLOWLIST -> mcp.log.allowlist (pipe-separated)
+    - FEWWORD_MCP_LOG_DENYLIST -> mcp.log.denylist (pipe-separated)
+    - FEWWORD_MCP_CLAMP_ENABLED -> mcp.clamp.enabled
+    - FEWWORD_MCP_CLAMP_ALLOWLIST -> mcp.clamp.allowlist (pipe-separated)
+    - FEWWORD_MCP_CLAMP_DENYLIST -> mcp.clamp.denylist (pipe-separated)
     """
     config: Dict[str, Any] = {}
 
@@ -309,6 +327,31 @@ def _env_to_config() -> Dict:
         manifest['keep_rotated'] = v
     if manifest:
         config['manifest'] = manifest
+
+    # MCP (logging and clamping for MCP tools)
+    mcp = {}
+    mcp_log = {}
+    if (v := _bool('FEWWORD_MCP_LOG_ENABLED')) is not None:
+        mcp_log['enabled'] = v
+    if (v := _list_pipe('FEWWORD_MCP_LOG_ALLOWLIST')) is not None:
+        mcp_log['allowlist'] = v
+    if (v := _list_pipe('FEWWORD_MCP_LOG_DENYLIST')) is not None:
+        mcp_log['denylist'] = v
+    if mcp_log:
+        mcp['log'] = mcp_log
+
+    mcp_clamp = {}
+    if (v := _bool('FEWWORD_MCP_CLAMP_ENABLED')) is not None:
+        mcp_clamp['enabled'] = v
+    if (v := _list_pipe('FEWWORD_MCP_CLAMP_ALLOWLIST')) is not None:
+        mcp_clamp['allowlist'] = v
+    if (v := _list_pipe('FEWWORD_MCP_CLAMP_DENYLIST')) is not None:
+        mcp_clamp['denylist'] = v
+    if mcp_clamp:
+        mcp['clamp'] = mcp_clamp
+
+    if mcp:
+        config['mcp'] = mcp
 
     return config
 

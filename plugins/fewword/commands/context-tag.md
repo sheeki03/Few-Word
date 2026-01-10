@@ -89,14 +89,22 @@ def resolve_id(selector, cwd):
     if len(selector) == 8 and all(c in '0123456789ABCDEFabcdef' for c in selector):
         return selector.upper()
 
-    # Command name - find latest
+    # Command/title name - find latest
     try:
         with open(manifest_path, 'r') as f:
             for line in reversed(f.readlines()):
                 try:
                     entry = json.loads(line)
-                    if entry.get('type') == 'offload' and entry.get('cmd') == selector:
+                    entry_type = entry.get('type', '')
+
+                    # Match offload by cmd
+                    if entry_type == 'offload' and entry.get('cmd') == selector:
                         return entry.get('id', '').upper()
+
+                    # Match manual/export by title (case-insensitive)
+                    if entry_type in ('manual', 'export'):
+                        if entry.get('title', '').lower() == selector.lower():
+                            return entry.get('id', '').upper()
                 except (json.JSONDecodeError, KeyError, TypeError):
                     pass
     except (FileNotFoundError, IOError):

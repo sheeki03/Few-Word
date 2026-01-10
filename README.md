@@ -176,12 +176,17 @@ Then start a new session for hooks to reload.
 | `/fewword-help` | Show detailed help and how the plugin works |
 | `/fewword-stats` | Show session statistics and estimated token savings |
 | `/fewword-version` | Show installed version and update command |
-| `/context-open <id>` | Retrieve an offloaded output by ID |
+| `/fewword-doctor` | Run self-diagnostics and check hook status |
+| `/context-open <id>` | Retrieve an offloaded output by ID or title |
 | `/context-recent` | Show recent offloaded outputs (recovery after compaction) |
+| `/context-save "title"` | Manually save large content (subagent outputs, etc.) |
+| `/context-search <term>` | Search through all offloaded context |
+| `/context-export` | Export session history as markdown report |
 | `/context-pin <id>` | Pin an output to prevent auto-cleanup |
+| `/context-tag <id> <tags>` | Add tags to outputs for organization |
+| `/context-timeline` | Visual timeline of session activity |
 | `/context-init` | Set up FewWord directory structure |
 | `/context-cleanup` | See storage stats, clean old files |
-| `/context-search <term>` | Search through all offloaded context |
 
 ---
 
@@ -262,7 +267,7 @@ The plugin conservatively skips these commands:
 
 ## Configuration
 
-### Defaults (v1.3.3)
+### Defaults (v1.3.4)
 
 | Setting | Value |
 |---------|-------|
@@ -290,6 +295,10 @@ FEWWORD_VERBOSE_POINTER=1           # Use old verbose format (v2.0 style)
 FEWWORD_RETENTION_SUCCESS_MIN=1440  # 24h default
 FEWWORD_RETENTION_FAIL_MIN=2880     # 48h default
 FEWWORD_SCRATCH_MAX_MB=250          # LRU cap
+
+# MCP tool filtering (v1.3.4)
+FEWWORD_MCP_LOG_DENYLIST="mcp__corridor__*|mcp__internal__*"  # Skip logging these
+FEWWORD_MCP_CLAMP_ALLOWLIST="mcp__github__*"                   # Only clamp these
 ```
 
 > **Note:** Longer retention keeps command outputs on disk longer. If you work with sensitive data, consider lowering TTLs via environment variables or adding `.fewword/scratch/` to your backup exclusions.
@@ -298,7 +307,7 @@ FEWWORD_SCRATCH_MAX_MB=250          # LRU cap
 
 ## Privacy & Security
 
-### Security Hardening (v1.3.3)
+### Security Hardening (v1.3.4)
 
 | Protection | What It Does |
 |------------|--------------|
@@ -337,6 +346,15 @@ FewWord intercepts MCP tool calls (`mcp__*`) for two purposes:
 ```
 
 Your actual query strings, repo names, and other sensitive values are **never logged**.
+
+**Allowlist/Denylist (v1.3.4):** Configure which MCP tools get logged/clamped via `.fewwordrc.toml`:
+```toml
+[mcp.log]
+denylist = ["mcp__corridor__*"]  # Skip logging these tools
+
+[mcp.clamp]
+allowlist = ["mcp__github__*"]   # Only clamp these tools
+```
 
 ---
 

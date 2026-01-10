@@ -14,6 +14,9 @@ Run a health check on FewWord installation and optionally fix common issues.
 
 # Attempt to fix common issues
 /fewword-doctor --fix
+
+# Test which hooks are firing
+/fewword-doctor --test-hooks
 ```
 
 ## Implementation
@@ -32,6 +35,132 @@ from datetime import datetime, timezone
 
 def get_cwd():
     return os.environ.get('FEWWORD_CWD', os.getcwd())
+
+def test_hooks(cwd):
+    """Test which hooks are firing by checking session and manifest activity."""
+    cwd = Path(cwd)
+
+    print("Hook Capability Detection")
+    print("=" * 50)
+    print()
+    print("This test infers hook status from filesystem evidence.")
+    print("Hooks must fire at least once to be detected.")
+    print()
+
+    results = {
+        'SessionStart': {'detected': False, 'evidence': []},
+        'PreToolUse': {'detected': False, 'evidence': []},
+        'SessionEnd': {'detected': False, 'evidence': []},
+        'Stop': {'detected': False, 'evidence': []},
+    }
+
+    # Check for SessionStart evidence
+    session_file = cwd / '.fewword' / 'index' / 'session.json'
+    if session_file.exists():
+        try:
+            data = json.loads(session_file.read_text())
+            if data.get('session_id'):
+                results['SessionStart']['detected'] = True
+                results['SessionStart']['evidence'].append(f"session.json exists with ID {data['session_id'][:8]}")
+        except Exception:
+            pass
+
+    # Check if scratch dir exists (created by SessionStart)
+    scratch_dir = cwd / '.fewword' / 'scratch' / 'tool_outputs'
+    if scratch_dir.exists():
+        results['SessionStart']['evidence'].append("scratch directory exists")
+        if not results['SessionStart']['detected']:
+            results['SessionStart']['detected'] = True
+
+    # Check for PreToolUse evidence (manifest entries)
+    manifest_path = cwd / '.fewword' / 'index' / 'tool_outputs.jsonl'
+    if manifest_path.exists():
+        offload_count = 0
+        try:
+            with open(manifest_path, 'r') as f:
+                for line in f:
+                    try:
+                        entry = json.loads(line)
+                        if entry.get('type') == 'offload':
+                            offload_count += 1
+                    except json.JSONDecodeError:
+                        pass
+        except Exception:
+            pass
+
+        if offload_count > 0:
+            results['PreToolUse']['detected'] = True
+            results['PreToolUse']['evidence'].append(f"{offload_count} offload entries in manifest")
+
+    # Check for LATEST symlinks (created by PreToolUse)
+    latest_txt = scratch_dir / 'LATEST.txt'
+    if latest_txt.exists() or latest_txt.is_symlink():
+        results['PreToolUse']['evidence'].append("LATEST.txt symlink exists")
+        if not results['PreToolUse']['detected']:
+            results['PreToolUse']['detected'] = True
+
+    # Check for MCP metadata (created by mcp_interceptor in PreToolUse)
+    mcp_metadata = cwd / '.fewword' / 'index' / 'mcp_metadata.jsonl'
+    if mcp_metadata.exists():
+        try:
+            line_count = sum(1 for _ in open(mcp_metadata))
+            if line_count > 0:
+                results['PreToolUse']['evidence'].append(f"{line_count} MCP tool calls logged")
+        except Exception:
+            pass
+
+    # Check for archived plans (created by SessionEnd)
+    plans_dir = cwd / '.fewword' / 'memory' / 'plans'
+    if plans_dir.exists():
+        archived_plans = list(plans_dir.glob('*.yaml')) + list(plans_dir.glob('*.yml'))
+        if archived_plans:
+            results['SessionEnd']['detected'] = True
+            results['SessionEnd']['evidence'].append(f"{len(archived_plans)} archived plans")
+
+    # Check for history archives (could be SessionEnd or Stop)
+    history_dir = cwd / '.fewword' / 'memory' / 'history'
+    if history_dir.exists():
+        archives = list(history_dir.glob('*.json')) + list(history_dir.glob('*.jsonl'))
+        if archives:
+            results['SessionEnd']['evidence'].append(f"{len(archives)} session archives")
+            if not results['SessionEnd']['detected']:
+                results['SessionEnd']['detected'] = True
+
+    # Stop hook is harder to detect - it fires on abnormal exit
+    # Look for any warning logs or special markers
+    # For now, we can only say "unknown" unless we have specific evidence
+
+    # Print results
+    for hook, info in results.items():
+        status = "✓ DETECTED" if info['detected'] else "? Unknown"
+        print(f"{hook}: {status}")
+        for ev in info['evidence']:
+            print(f"    └─ {ev}")
+        if not info['evidence']:
+            print(f"    └─ No evidence found (hook may not have fired yet)")
+        print()
+
+    # Summary
+    print("=" * 50)
+    detected_count = sum(1 for h in results.values() if h['detected'])
+    print(f"Detected: {detected_count}/4 hooks")
+    print()
+
+    if detected_count == 0:
+        print("No hooks detected. This could mean:")
+        print("  1. Hooks haven't fired yet (try running some commands)")
+        print("  2. Plugin not installed correctly")
+        print("  3. Claude Code hooks disabled globally")
+        print()
+        print("To test manually:")
+        print("  1. Run a command that produces output (e.g., 'ls -la')")
+        print("  2. Run '/fewword-doctor --test-hooks' again")
+    elif detected_count < 3:
+        print("Some hooks not detected. This is normal if:")
+        print("  - SessionEnd: Session hasn't ended yet")
+        print("  - Stop: Only fires on abnormal exit")
+    else:
+        print("Hook system appears healthy!")
 
 def check_health(fix=False):
     cwd = Path(get_cwd())
@@ -268,8 +397,12 @@ def check_health(fix=False):
 
 # Parse args
 fix_mode = '--fix' in sys.argv
+test_hooks_mode = '--test-hooks' in sys.argv
 
-check_health(fix=fix_mode)
+if test_hooks_mode:
+    test_hooks(get_cwd())
+else:
+    check_health(fix=fix_mode)
 ```
 
 ## What Gets Checked
@@ -284,6 +417,17 @@ check_health(fix=fix_mode)
 | .gitignore | Contains .fewword patterns |
 | Orphan files | Files in scratch not in manifest |
 | Hooks | Hook configuration exists |
+
+## Hook Detection (--test-hooks)
+
+The `--test-hooks` flag detects which hooks are firing by examining filesystem evidence:
+
+| Hook | Evidence Checked |
+|------|------------------|
+| SessionStart | session.json exists, scratch directory created |
+| PreToolUse | Manifest has offload entries, LATEST.txt symlink, MCP metadata |
+| SessionEnd | Archived plans in memory/plans/, session archives |
+| Stop | (Fires on abnormal exit, harder to detect) |
 
 ## Safe Repairs (--fix)
 
@@ -318,4 +462,36 @@ Hooks: 5 hooks configured
 
 ==================================================
 All checks passed!
+```
+
+## Hook Test Output Example
+
+```
+Hook Capability Detection
+==================================================
+
+This test infers hook status from filesystem evidence.
+Hooks must fire at least once to be detected.
+
+SessionStart: ✓ DETECTED
+    └─ session.json exists with ID b719edab
+    └─ scratch directory exists
+
+PreToolUse: ✓ DETECTED
+    └─ 42 offload entries in manifest
+    └─ LATEST.txt symlink exists
+    └─ 156 MCP tool calls logged
+
+SessionEnd: ? Unknown
+    └─ No evidence found (hook may not have fired yet)
+
+Stop: ? Unknown
+    └─ No evidence found (hook may not have fired yet)
+
+==================================================
+Detected: 2/4 hooks
+
+Some hooks not detected. This is normal if:
+  - SessionEnd: Session hasn't ended yet
+  - Stop: Only fires on abnormal exit
 ```
