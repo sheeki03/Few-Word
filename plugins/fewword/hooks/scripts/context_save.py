@@ -287,7 +287,8 @@ def main():
             print("  echo \"output\" | /context-save \"title\"")
             print("  /context-save \"title\" --file /path/to/file")
             sys.exit(1)
-        content = sys.stdin.read()
+        encoding = sys.stdin.encoding or 'utf-8'
+        content = sys.stdin.buffer.read().decode(encoding, 'replace')
 
     # Validate content
     if not content.strip():
