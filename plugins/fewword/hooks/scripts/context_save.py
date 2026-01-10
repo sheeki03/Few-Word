@@ -222,12 +222,20 @@ def main():
 
     i = 0
     while i < len(args):
-        if args[i] == '--file' and i + 1 < len(args):
-            file_path = args[i + 1]
-            i += 2
-        elif args[i] == '--source' and i + 1 < len(args):
-            source = args[i + 1]
-            i += 2
+        if args[i] == '--file':
+            if i + 1 < len(args):
+                file_path = args[i + 1]
+                i += 2
+            else:
+                print("Error: --file requires a path")
+                sys.exit(1)
+        elif args[i] == '--source':
+            if i + 1 < len(args):
+                source = args[i + 1]
+                i += 2
+            else:
+                print("Error: --source requires a value")
+                sys.exit(1)
         elif args[i] in ('--help', '-h'):
             print("Usage: /context-save \"title\" [--file path] [--source hint]")
             print("")
@@ -311,7 +319,7 @@ def main():
 
     # Write content
     try:
-        output_path.write_text(content)
+        output_path.write_text(content, encoding='utf-8')
     except Exception as e:
         print(f"Error writing file: {e}")
         sys.exit(1)

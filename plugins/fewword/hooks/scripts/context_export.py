@@ -508,7 +508,7 @@ def main():
 
     # Get session info
     session = get_session_info(cwd)
-    session_id = session.get('session_id') if session else None
+    session_id = session.get('session_id') if isinstance(session, dict) else None
 
     if not session_id and not all_time:
         print("No active session found.")
