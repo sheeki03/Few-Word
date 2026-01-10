@@ -33,6 +33,5 @@ Display the currently installed FewWord plugin version.
 ## Notes
 
 - Version follows semantic versioning (major.minor.patch)
-- Update checks run on SessionStart (rate-limited to once every 24 hours)
+- Update notifications show on every SessionStart until updated
 - Set `FEWWORD_DISABLE_UPDATE_CHECK=1` to disable auto-check
-- Set `FEWWORD_DISABLE_UPDATE_NOTIFY=1` to disable notifications

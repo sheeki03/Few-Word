@@ -167,13 +167,6 @@ Then start a new session for hooks to reload.
 
 **Disable update checks:** `export FEWWORD_DISABLE_UPDATE_CHECK=1`
 
-**Disable update notifications (opt-out):** `export FEWWORD_DISABLE_UPDATE_NOTIFY=1`
-
-**OS notification fallback (when terminal output is not visible):**  
-FewWord will try to send a system notification if it cannot reach your terminal TTY.
-
-**Disable OS notifications:** `export FEWWORD_DISABLE_OS_NOTIFY=1`
-
 ---
 
 ## Commands
