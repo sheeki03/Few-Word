@@ -289,6 +289,9 @@ def generate_wrapper(original_cmd: str, output_dir: str, safe_cmd: str,
     escaped_session = session_id.replace("'", "'\"'\"'")
     escaped_cmd_token = cmd_token.replace("'", "'\"'\"'")
     escaped_cmd_group = cmd_group.replace("'", "'\"'\"'")
+    # Pre-compute expressions to avoid f-string compatibility issues (Python 3.11+)
+    denied_str = 'true' if denied else 'false'
+    escaped_deny_reason = deny_reason.replace("'", "'\"'\"'") if deny_reason else ""
 
     wrapper = f'''
 set -o pipefail
@@ -303,8 +306,8 @@ __fw_open_cmd='{escaped_open_cmd}'
 __fw_cmd_token='{escaped_cmd_token}'
 __fw_cmd_group='{escaped_cmd_group}'
 __fw_manifest="$__fw_cwd/.fewword/index/tool_outputs.jsonl"
-__fw_denied={'true' if denied else 'false'}
-__fw_deny_reason='{deny_reason.replace("'", "'\"'\"'") if deny_reason else ""}'
+__fw_denied={denied_str}
+__fw_deny_reason='{escaped_deny_reason}'
 
 # P1 fix #13: Robust JSON escape helper
 # Uses jq -Rs if available (proper JSON escaping), falls back to sed-based escaping
