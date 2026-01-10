@@ -119,13 +119,35 @@ Total Context: 84k tokens (with plugin) vs 105k tokens (without)
 
 ## Installation
 
+**Step 1: Add the marketplace**
+
+```bash
+claude plugin marketplace add sheeki03/Few-Word
+```
+
+**Step 2: Install the plugin**
+
 ```bash
 claude plugin install fewword@sheeki03-Few-Word
 ```
 
-**Important**: Start a new session after installation for hooks to load.
+**Step 3:** Start a new session for hooks to load.
 
 **That's it!** FewWord works automatically — no configuration needed.
+
+<details>
+<summary><b>Alternative: Install from inside Claude Code</b></summary>
+
+You can also run these commands inside an active Claude session:
+
+```
+/plugin marketplace add sheeki03/Few-Word
+/plugin install fewword@sheeki03-Few-Word
+```
+
+Then start a new session.
+
+</details>
 
 ---
 
