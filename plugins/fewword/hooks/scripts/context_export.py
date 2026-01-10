@@ -68,6 +68,8 @@ def _load_config_from_files(cwd):
     Uses proper precedence: user config -> repo config -> env vars.
     """
     config = {'enabled': True, 'patterns': [], 'replacement': '[REDACTED]'}
+    if not cwd:
+        cwd = os.getcwd()
 
     # Load user config first (lowest priority)
     user_paths = [Path.home() / '.fewwordrc.toml', Path.home() / '.fewwordrc.json']
@@ -152,6 +154,7 @@ def create_redactor(cwd):
             redactor = _load_config_from_files(cwd)
     else:
         redactor = _load_config_from_files(cwd)
+    redactor = redactor or {}
 
     # Use full Redactor with built-in patterns if available
     if HAS_REDACTION and Redactor:
@@ -247,7 +250,7 @@ def get_all_manifests(cwd):
     # Find archived manifests (tool_outputs_YYYY-MM.jsonl format)
     try:
         archived = sorted(
-            index_dir.glob('tool_outputs_*.jsonl'),
+            [p for p in index_dir.glob('tool_outputs_*.jsonl') if p.exists()],
             key=lambda p: p.stat().st_mtime,
             reverse=True
         )
@@ -411,7 +414,9 @@ def generate_report(cwd, session_id=None, all_time=False):
 
         for entry in all_outputs[:20]:
             entry_type = entry.get('type', 'offload')
-            hex_id = entry.get('id', '????')[:8]
+            raw_id = entry.get('id', '')
+            full_id = raw_id.upper()
+            display_id = raw_id[:8] if raw_id else '????'
             time_str = format_timestamp(entry.get('created_at', ''))
 
             if entry_type == 'offload':
@@ -426,10 +431,10 @@ def generate_report(cwd, session_id=None, all_time=False):
                 type_label = entry_type
 
             size = format_bytes(entry.get('bytes', 0))
-            entry_tags = ', '.join(sorted(tags_map.get(hex_id.upper(), [])))
-            pinned = "[P]" if hex_id.upper() in currently_pinned else ""
+            entry_tags = ', '.join(sorted(tags_map.get(full_id, [])))
+            pinned = "[P]" if full_id in currently_pinned else ""
 
-            lines.append(f"| {time_str} | {type_label} | {hex_id}{pinned} | {cmd} | {exit_code} | {size} | {entry_tags} |")
+            lines.append(f"| {time_str} | {type_label} | {display_id}{pinned} | {cmd} | {exit_code} | {size} | {entry_tags} |")
         lines.append(f"")
 
     # Failures section
@@ -437,17 +442,20 @@ def generate_report(cwd, session_id=None, all_time=False):
         lines.append("## Failures")
         lines.append(f"")
         for entry in failures[:10]:
-            hex_id = entry.get('id', '????')[:8]
+            raw_id = entry.get('id', '')
+            full_id = raw_id.upper()
+            display_id = raw_id[:8] if raw_id else '????'
             cmd = entry.get('cmd_group') or entry.get('cmd', '?')
             exit_code = entry.get('exit_code', '?')
             age = calculate_age(entry.get('created_at', ''))
-            entry_notes = notes_map.get(hex_id.upper(), [])
+            entry_notes = notes_map.get(full_id, [])
 
-            lines.append(f"### [{hex_id}] {cmd} (exit={exit_code}, {age})")
+            lines.append(f"### [{display_id}] {cmd} (exit={exit_code}, {age})")
             lines.append(f"")
             lines.append(f"- Size: {format_bytes(entry.get('bytes', 0))}")
             lines.append(f"- Lines: {entry.get('lines', '?')}")
-            lines.append(f"- Retrieve: `/context-open {hex_id}`")
+            open_id = raw_id or display_id
+            lines.append(f"- Retrieve: `/context-open {open_id}`")
 
             if entry_notes:
                 lines.append(f"- Notes:")
@@ -460,8 +468,10 @@ def generate_report(cwd, session_id=None, all_time=False):
         lines.append("## Pinned Outputs")
         lines.append(f"")
         for entry in all_content:
-            if entry.get('id', '').upper() in currently_pinned:
-                hex_id = entry.get('id', '????')[:8]
+            raw_id = entry.get('id', '')
+            full_id = raw_id.upper()
+            if full_id in currently_pinned:
+                display_id = raw_id[:8] if raw_id else '????'
                 entry_type = entry.get('type', 'offload')
 
                 if entry_type == 'offload':
@@ -470,7 +480,7 @@ def generate_report(cwd, session_id=None, all_time=False):
                     # Redact titles for manual/export entries
                     label = redact_text(entry.get('title', entry_type), redactor)
 
-                lines.append(f"- [{hex_id}] {label} ({format_bytes(entry.get('bytes', 0))})")
+                lines.append(f"- [{display_id}] {label} ({format_bytes(entry.get('bytes', 0))})")
         lines.append(f"")
 
     # Footer

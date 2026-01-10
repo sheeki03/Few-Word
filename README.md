@@ -182,6 +182,8 @@ Then start a new session for hooks to reload.
 | `/context-init` | Set up FewWord directory structure |
 | `/context-cleanup` | See storage stats, clean old files |
 | `/context-search <term>` | Search through all offloaded context |
+| `/context-save <content>` | Manually save content to FewWord storage |
+| `/context-export` | Export session history as markdown report |
 
 ---
 
@@ -262,7 +264,7 @@ The plugin conservatively skips these commands:
 
 ## Configuration
 
-### Defaults (v1.3.3)
+### Defaults (v1.3.4)
 
 | Setting | Value |
 |---------|-------|
@@ -298,7 +300,7 @@ FEWWORD_SCRATCH_MAX_MB=250          # LRU cap
 
 ## Privacy & Security
 
-### Security Hardening (v1.3.3)
+### Security Hardening (v1.3.4)
 
 | Protection | What It Does |
 |------------|--------------|

@@ -147,6 +147,7 @@ def create_redactor(cwd: str):
             redaction_config = _load_config_from_files(cwd)
     else:
         redaction_config = _load_config_from_files(cwd)
+    redaction_config = redaction_config or {}
 
     # Use full Redactor with built-in patterns if available
     if HAS_REDACTION and Redactor:
@@ -180,7 +181,9 @@ def create_redactor(cwd: str):
                 count += n
             return result, count
 
-    print("[FewWord] Warning: redaction.py not found, built-in secret patterns unavailable", file=sys.stderr)
+    if not getattr(create_redactor, "_warned_no_redaction", False):
+        print("[FewWord] Warning: redaction.py not found, built-in secret patterns unavailable", file=sys.stderr)
+        create_redactor._warned_no_redaction = True
     return BasicRedactor(redaction_config)
 
 def apply_redaction(content: str, cwd: str) -> tuple:
