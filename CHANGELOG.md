@@ -2,6 +2,23 @@
 
 All notable changes to FewWord will be documented in this file.
 
+## [1.3.4] - 2026-01-10
+
+### New Features
+- **Manual offloading** (`/context-save`): Save arbitrary content to FewWord storage with custom labels
+- **Session export** (`/context-export`): Export session history as markdown report
+- **Cross-session search** (`/context-search --all-sessions`): Search across all sessions, not just current
+- **MCP allowlist/denylist**: Configure which MCP tools get logged/clamped via `mcp_allowlist` and `mcp_denylist` in config
+
+### Extended Entry Types
+- Manual entries (`type: "manual"`) for `/context-save`
+- Export entries (`type: "export"`) for `/context-export`
+- All commands updated to support new entry types in filtering and display
+
+### Improved
+- Config precedence: user config (~/.config/fewword/) > repo config (.fewword/config.toml) > env vars
+- Filename patterns standardized for smart_cleanup compatibility
+
 ## [1.3.3] - 2025-01-09
 
 ### Security Hardening

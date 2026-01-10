@@ -455,6 +455,14 @@ Claude: /context-open A1B2</pre>
                     <h3>Zero Config</h3>
                     <p>Works automatically after installation. No setup, no configuration files. Just install and go.</p>
                 </div>
+                <div class="feature">
+                    <h3>Manual Saves</h3>
+                    <p>Use <code>/context-save</code> to manually offload content with custom labels. Great for API responses, debug data, or any large text.</p>
+                </div>
+                <div class="feature">
+                    <h3>Session Export</h3>
+                    <p>Export your session history as markdown with <code>/context-export</code>. Perfect for documentation or sharing context.</p>
+                </div>
             </div>
         </section>
 
@@ -479,7 +487,15 @@ Claude: /context-open A1B2</pre>
                 </div>
                 <div class="command-item">
                     <code>/context-search &lt;term&gt;</code>
-                    <p>Search through all offloaded context files</p>
+                    <p>Search through all offloaded context files (use --all-sessions for cross-session search)</p>
+                </div>
+                <div class="command-item">
+                    <code>/context-save &lt;content&gt;</code>
+                    <p>Manually save arbitrary content to FewWord storage with custom labels</p>
+                </div>
+                <div class="command-item">
+                    <code>/context-export</code>
+                    <p>Export session history as a markdown report</p>
                 </div>
                 <div class="command-item">
                     <code>/fewword-help</code>

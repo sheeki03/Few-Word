@@ -17,7 +17,7 @@ Retrieve offloaded output with a "peek" preview by default. Only dumps full cont
 /context-open 1                 # By number from /context-recent
 /context-open pytest            # Latest output from 'pytest' command
 
-# NEW: Shortcut flags (v1.3.3)
+# NEW: Shortcut flags (v1.3.4)
 /context-open --last            # Most recent output (any command)
 /context-open --last pytest     # Most recent pytest output
 /context-open --last-fail       # Most recent failed output (exit != 0)
@@ -66,7 +66,7 @@ Hint: --full | --head 50 | --tail 50 | --grep "pattern"
    grep_i=false
    selector=""
 
-   # NEW: Shortcut flags (v1.3.3)
+   # NEW: Shortcut flags (v1.3.4)
    use_last=false
    use_last_fail=false
    nth=1
