@@ -10,10 +10,10 @@ Run a health check on FewWord installation and optionally fix common issues.
 
 ```bash
 # Basic health check
-/fewword-doctor
+/doctor
 
 # Attempt to fix common issues
-/fewword-doctor --fix
+/doctor --fix
 ```
 
 ## Implementation
@@ -262,7 +262,7 @@ def check_health(fix=False):
                 print(f"  + {f}")
         elif not fix:
             print()
-            print("Run '/fewword-doctor --fix' to attempt repairs")
+            print("Run '/doctor --fix' to attempt repairs")
     else:
         print("All checks passed!")
 

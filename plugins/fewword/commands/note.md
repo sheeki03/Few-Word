@@ -16,12 +16,12 @@ Add notes to offloaded outputs for documentation and context.
 ## Usage
 
 ```bash
-/context-note A1B2C3D4 "Failed deploy, rolled back at 3pm"
-/context-note 1 "Root cause: missing env var"
-/context-note pytest "Regression introduced in commit abc123"
+/note A1B2C3D4 "Failed deploy, rolled back at 3pm"
+/note 1 "Root cause: missing env var"
+/note pytest "Regression introduced in commit abc123"
 
 # View notes for an output
-/context-note A1B2C3D4 --view
+/note A1B2C3D4 --view
 ```
 
 ## Implementation
@@ -145,8 +145,8 @@ def main():
 
     if len(args) < 1:
         print("Usage:")
-        print("  /context-note <selector> \"<note>\"  # Add note")
-        print("  /context-note <selector> --view     # View notes")
+        print("  /note <selector> \"<note>\"  # Add note")
+        print("  /note <selector> --view     # View notes")
         sys.exit(1)
 
     selector = args[0]
@@ -154,7 +154,7 @@ def main():
 
     if not hex_id:
         print(f"Error: Could not resolve '{selector}' to an output ID.")
-        print("Use /context-recent to see available outputs.")
+        print("Use /recent to see available outputs.")
         sys.exit(1)
 
     # View mode
@@ -182,7 +182,7 @@ def main():
 
     if not note:
         print("Error: No note provided.")
-        print('Usage: /context-note <selector> "Your note here"')
+        print('Usage: /note <selector> "Your note here"')
         sys.exit(1)
 
     # Validate note length
@@ -201,20 +201,20 @@ if __name__ == '__main__':
 
 ### Adding a note
 ```
-> /context-note A1B2 "Failed deploy, rolled back at 3pm"
+> /note A1B2 "Failed deploy, rolled back at 3pm"
 Added note to [A1B2C3D4]: Failed deploy, rolled back at 3pm
 ```
 
 ### Viewing notes
 ```
-> /context-note A1B2 --view
+> /note A1B2 --view
 Notes for [A1B2C3D4]:
 
   1. (2h ago) Failed deploy, rolled back at 3pm
   2. (1h ago) Root cause identified: missing DB_URL env var
 ```
 
-## Integration with /context-open
+## Integration with /open
 
 Notes appear when retrieving output:
 
@@ -235,5 +235,5 @@ HEAD:
 - Max note length: 500 characters
 - Multiple notes can be added to the same output
 - Notes persist across sessions and survive cleanup
-- Notes appear when viewing outputs with `/context-open`
+- Notes appear when viewing outputs with `/open`
 - **Quote handling limitation**: Quotes around notes are stripped only when they match at start and end. A note like `"foo bar'` will retain both quotes.

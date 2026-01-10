@@ -2,7 +2,7 @@
 description: "Open/retrieve an offloaded output by ID or shortcut"
 arguments:
   - name: selector
-    description: "ID (hex), number from /context-recent, command name, or use --last flags"
+    description: "ID (hex), number from /recent, command name, or use --last flags"
     required: false
 ---
 
@@ -13,16 +13,16 @@ Retrieve offloaded output with a "peek" preview by default. Only dumps full cont
 ## Usage
 
 ```
-/context-open A1B2              # By hex ID
-/context-open 1                 # By number from /context-recent
-/context-open pytest            # Latest output from 'pytest' command
+/open A1B2              # By hex ID
+/open 1                 # By number from /recent
+/open pytest            # Latest output from 'pytest' command
 
 # NEW: Shortcut flags (v1.3.4)
-/context-open --last            # Most recent output (any command)
-/context-open --last pytest     # Most recent pytest output
-/context-open --last-fail       # Most recent failed output (exit != 0)
-/context-open --last-fail pytest  # Most recent failed pytest
-/context-open --nth 2 pytest    # 2nd most recent pytest output
+/open --last            # Most recent output (any command)
+/open --last pytest     # Most recent pytest output
+/open --last-fail       # Most recent failed output (exit != 0)
+/open --last-fail pytest  # Most recent failed pytest
+/open --nth 2 pytest    # 2nd most recent pytest output
 
 Output flags:
   --full                        # Print entire file
@@ -162,10 +162,10 @@ Hint: --full | --head 50 | --tail 50 | --grep "pattern"
      echo "Error: No selector provided."
      echo ""
      echo "Usage:"
-     echo "  /context-open <id|number|cmd>          # By ID, number, or command name"
-     echo "  /context-open --last [cmd]             # Most recent (optionally filtered)"
-     echo "  /context-open --last-fail [cmd]        # Most recent failure"
-     echo "  /context-open --nth N [cmd]            # Nth most recent"
+     echo "  /open <id|number|cmd>          # By ID, number, or command name"
+     echo "  /open --last [cmd]             # Most recent (optionally filtered)"
+     echo "  /open --last-fail [cmd]        # Most recent failure"
+     echo "  /open --nth N [cmd]            # Nth most recent"
      echo ""
      echo "Output flags: --full | --head N | --tail N | --grep pattern"
      exit 1
@@ -222,7 +222,7 @@ for entry in reversed(entries):
        [ "$nth" -gt 1 ] && filter_desc="$filter_desc (nth=$nth)"
        echo "Error: No matching output found$filter_desc"
        echo ""
-       echo "Try /context-recent to see available outputs"
+       echo "Try /recent to see available outputs"
        exit 1
      fi
    else
@@ -233,7 +233,7 @@ for entry in reversed(entries):
        echo "Error: Could not resolve '$selector'"
        echo ""
        echo "Try:"
-       echo "  - Run /context-recent to see available outputs"
+       echo "  - Run /recent to see available outputs"
        echo "  - Use a number (1, 2, 3) from the list"
        echo "  - Use an 8-char hex ID (e.g., A1B2C3D4)"
        echo "  - Use a command name (e.g., pytest)"
@@ -288,7 +288,7 @@ for entry in reversed(entries):
      echo "  - TTL expiration (24h for success, 48h for failures)"
      echo "  - LRU eviction (scratch > 250MB)"
      echo ""
-     echo "Use /context-pin <id> next time to preserve important outputs."
+     echo "Use /pin <id> next time to preserve important outputs."
      exit 0
    fi
    ```
@@ -364,6 +364,6 @@ for entry in reversed(entries):
 
 - Default "peek" costs ~60 tokens vs ~500+ for full dump
 - IDs are case-insensitive (a1b2c3d4 = A1B2C3D4)
-- Numbers (1, 2, 3) reference the list from /context-recent
+- Numbers (1, 2, 3) reference the list from /recent
 - Command names find the latest exact match (not substring)
 - --grep output is capped at 50 lines / 4KB to prevent context explosion

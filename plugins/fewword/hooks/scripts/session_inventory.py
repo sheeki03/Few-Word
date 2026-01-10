@@ -8,7 +8,7 @@ recover context after compaction.
 Output is ultra-minimal (~50-100 tokens) to avoid context bloat.
 If scratch is empty, prints nothing.
 
-This is "best-effort" - /context-recent is the primary recovery path.
+This is "best-effort" - /recent is the primary recovery path.
 """
 
 import os
@@ -154,7 +154,7 @@ def main():
     if recent_strs:
         print(f"Recent: {', '.join(recent_strs)}")
 
-    print("Full list: /context-recent")
+    print("Full list: /recent")
 
 
 if __name__ == "__main__":

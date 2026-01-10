@@ -35,12 +35,12 @@ FewWord implements **dynamic context discovery** — patterns from [Manus](https
 
 **You get this (~35 tokens):**
 ```
-[fw A1B2C3D4] find e=0 15K 882L | /context-open A1B2C3D4
+[fw A1B2C3D4] find e=0 15K 882L | /open A1B2C3D4
 ```
 
 For failures, you also get a preview:
 ```
-[fw E5F6G7H8] pytest e=1 45K 234L | /context-open E5F6G7H8
+[fw E5F6G7H8] pytest e=1 45K 234L | /open E5F6G7H8
 FAILED test_auth.py::test_login - AssertionError
 FAILED test_api.py::test_endpoint - TimeoutError
 2 failed, 48 passed in 12.34s
@@ -153,7 +153,7 @@ Then start a new session.
 
 ## Updates
 
-FewWord checks for updates automatically on session start and notifies you if a new version is available.
+FewWord checks for updates automatically on session start. Notifications are rate-limited (at most once every 24 hours).
 
 **To update manually:**
 
@@ -163,9 +163,16 @@ claude plugin update fewword@sheeki03-Few-Word
 
 Then start a new session for hooks to reload.
 
-**Check your version:** `/fewword-version`
+**Check your version:** `/version`
 
 **Disable update checks:** `export FEWWORD_DISABLE_UPDATE_CHECK=1`
+
+**Disable update notifications (opt-out):** `export FEWWORD_DISABLE_UPDATE_NOTIFY=1`
+
+**OS notification fallback (when terminal output is not visible):**  
+FewWord will try to send a system notification if it cannot reach your terminal TTY.
+
+**Disable OS notifications:** `export FEWWORD_DISABLE_OS_NOTIFY=1`
 
 ---
 
@@ -173,17 +180,17 @@ Then start a new session for hooks to reload.
 
 | Command | What It Does |
 |---------|--------------|
-| `/fewword-help` | Show detailed help and how the plugin works |
-| `/fewword-stats` | Show session statistics and estimated token savings |
-| `/fewword-version` | Show installed version and update command |
-| `/context-open <id>` | Retrieve an offloaded output by ID |
-| `/context-recent` | Show recent offloaded outputs (recovery after compaction) |
-| `/context-pin <id>` | Pin an output to prevent auto-cleanup |
-| `/context-init` | Set up FewWord directory structure |
-| `/context-cleanup` | See storage stats, clean old files |
-| `/context-search <term>` | Search through all offloaded context |
-| `/context-save <content>` | Manually save content to FewWord storage |
-| `/context-export` | Export session history as markdown report |
+| `/help` | Show detailed help and how the plugin works |
+| `/stats` | Show session statistics and estimated token savings |
+| `/version` | Show installed version and update command |
+| `/open <id>` | Retrieve an offloaded output by ID |
+| `/recent` | Show recent offloaded outputs (recovery after compaction) |
+| `/pin <id>` | Pin an output to prevent auto-cleanup |
+| `/init` | Set up FewWord directory structure |
+| `/cleanup` | See storage stats, clean old files |
+| `/search <term>` | Search through all offloaded context |
+| `/save <content>` | Manually save content to FewWord storage |
+| `/export` | Export session history as markdown report |
 
 ---
 
@@ -196,7 +203,7 @@ Then start a new session for hooks to reload.
 | **Tiered Offloading** | < 512B: inline. 512B-4KB: compact pointer (~35 tokens). > 4KB: pointer + preview (failures only). |
 | **Smart Retention** | Exit 0 (success) → 24h retention. Exit != 0 (failure) → 48h retention. LRU eviction at 250MB. |
 | **LATEST Aliases** | `LATEST.txt` and `LATEST_{cmd}.txt` symlinks for quick retrieval |
-| **Session Tracking** | Per-session stats for `/fewword-stats` |
+| **Session Tracking** | Per-session stats for `/stats` |
 | **Plan Persistence** | Active plan in `.fewword/index/current_plan.yaml`, auto-archived on completion |
 
 ### Hook Events
@@ -223,7 +230,7 @@ your-project/
     │   └── subagents/               # Agent workspaces
     ├── memory/                      # Persistent (never auto-cleaned)
     │   ├── plans/                   # Archived completed plans
-    │   ├── pinned/                  # Pinned outputs (via /context-pin)
+    │   ├── pinned/                  # Pinned outputs (via /pin)
     │   └── history/                 # Archived sessions
     ├── index/                       # Metadata
     │   ├── session.json             # Current session ID
@@ -284,7 +291,7 @@ FEWWORD_PREVIEW_MIN=4096            # Above this: add preview (failures only)
 FEWWORD_PREVIEW_LINES=5             # Max preview lines
 
 # Pointer customization
-FEWWORD_OPEN_CMD=/context-open      # Command shown in pointer
+FEWWORD_OPEN_CMD=/open      # Command shown in pointer
 FEWWORD_SHOW_PATH=1                 # Append file path to pointer
 FEWWORD_VERBOSE_POINTER=1           # Use old verbose format (v2.0 style)
 

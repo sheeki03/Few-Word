@@ -16,15 +16,15 @@ Add tags to offloaded outputs for better organization and retrieval.
 ## Usage
 
 ```bash
-/context-tag A1B2 prod-migration deploy-jan9
-/context-tag 1 bugfix important
-/context-tag pytest regression test-failure
+/tag A1B2 prod-migration deploy-jan9
+/tag 1 bugfix important
+/tag pytest regression test-failure
 
 # List tags for an output
-/context-tag A1B2 --list
+/tag A1B2 --list
 
 # Remove tags
-/context-tag A1B2 --remove prod-migration
+/tag A1B2 --remove prod-migration
 ```
 
 ## Implementation
@@ -190,9 +190,9 @@ def main():
 
     if len(args) < 1:
         print("Usage:")
-        print("  /context-tag <selector> <tag1> [tag2] ...  # Add tags")
-        print("  /context-tag <selector> --list             # List tags")
-        print("  /context-tag <selector> --remove <tag>     # Remove tag")
+        print("  /tag <selector> <tag1> [tag2] ...  # Add tags")
+        print("  /tag <selector> --list             # List tags")
+        print("  /tag <selector> --remove <tag>     # Remove tag")
         sys.exit(1)
 
     selector = args[0]
@@ -200,7 +200,7 @@ def main():
 
     if not hex_id:
         print(f"Error: Could not resolve '{selector}' to an output ID.")
-        print("Use /context-recent to see available outputs.")
+        print("Use /recent to see available outputs.")
         sys.exit(1)
 
     # List mode
@@ -236,7 +236,7 @@ def main():
     tags = [t for t in args[1:] if not t.startswith('--')]
     if not tags:
         print("Error: No tags provided.")
-        print("Usage: /context-tag <selector> <tag1> [tag2] ...")
+        print("Usage: /tag <selector> <tag1> [tag2] ...")
         sys.exit(1)
 
     # Validate tags (alphanumeric + hyphen/underscore)
@@ -253,9 +253,9 @@ if __name__ == '__main__':
     main()
 ```
 
-## Integration with /context-recent
+## Integration with /recent
 
-Tags appear in `/context-recent` output:
+Tags appear in `/recent` output:
 
 ```
  # │ ID       │ Cmd    │ Exit │ Size  │ Age │ Tags
@@ -268,6 +268,6 @@ Tags appear in `/context-recent` output:
 
 - Tags are stored as separate entries in manifest (append-only)
 - Tag names must be alphanumeric with hyphens/underscores
-- Use `/context-recent --tag <tag>` to filter by tag
+- Use `/recent --tag <tag>` to filter by tag
 - Tags persist across sessions and survive cleanup
 - Pinned files keep their tags

@@ -16,7 +16,7 @@ Recent Offloaded Outputs
  2) C3D4     npm      0      12K     3h      exists
  3) E5F6     ls       0      900B    4h      cleaned
 
-Use: /context-open 1  or  /context-open pytest  or  /context-open A1B2
+Use: /open 1  or  /open pytest  or  /open A1B2
 ```
 
 ## Steps
@@ -87,7 +87,7 @@ Use: /context-open 1  or  /context-open pytest  or  /context-open A1B2
      # Print row
      printf " %-3s %-8s %-12s %-4s %-7s %-6s %s\n" "${num})" "${id:0:8}" "${cmd:0:12}" "$exit_code" "$size" "$age" "$status"
 
-     # Write to index file for /context-open resolution
+     # Write to index file for /open resolution
      echo "${num}:${id}:${cmd}" >> "$index_path"
    done
 
@@ -95,7 +95,7 @@ Use: /context-open 1  or  /context-open pytest  or  /context-open A1B2
    ln -sf "$index_path" "$pointer_path" 2>/dev/null || echo "$index_path" > "$pointer_path"
 
    echo ""
-   echo "Use: /context-open 1  or  /context-open pytest  or  /context-open A1B2"
+   echo "Use: /open 1  or  /open pytest  or  /open A1B2"
    ```
 
 3. Show summary stats:
@@ -109,7 +109,7 @@ Use: /context-open 1  or  /context-open pytest  or  /context-open A1B2
 
 ## Usage Examples
 
-- `/context-recent` - Show last 10 offloaded outputs with numbers
-- `/context-open 1` - Open most recent output
-- `/context-open pytest` - Open latest pytest output
+- `/recent` - Show last 10 offloaded outputs with numbers
+- `/open 1` - Open most recent output
+- `/open pytest` - Open latest pytest output
 - After compaction, use this to rediscover file pointers
