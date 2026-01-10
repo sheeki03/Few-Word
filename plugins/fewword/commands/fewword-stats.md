@@ -46,8 +46,6 @@ def get_manifest_entries(cwd, session_id=None):
     manifest_path = Path(cwd) / '.fewword' / 'index' / 'tool_outputs.jsonl'
     entries = {
         'offloads': [],
-        'manuals': [],
-        'exports': [],
         'pins': [],
         'tags': [],
         'notes': [],
@@ -63,17 +61,13 @@ def get_manifest_entries(cwd, session_id=None):
                 entry = json.loads(line)
                 entry_type = entry.get('type', '')
 
-                # Filter by session if specified (for offload, manual, export)
-                if session_id and entry_type in ('offload', 'manual', 'export'):
+                # Filter by session if specified
+                if session_id and entry_type == 'offload':
                     if entry.get('session_id') != session_id:
                         continue
 
                 if entry_type == 'offload':
                     entries['offloads'].append(entry)
-                elif entry_type == 'manual':
-                    entries['manuals'].append(entry)
-                elif entry_type == 'export':
-                    entries['exports'].append(entry)
                 elif entry_type == 'pin':
                     entries['pins'].append(entry)
                 elif entry_type == 'tag':
@@ -144,13 +138,8 @@ def main():
     # Get entries
     entries = get_manifest_entries(cwd, session_id=session_id)
     offloads = entries['offloads']
-    manuals = entries['manuals']
-    exports = entries['exports']
 
-    # Combine all content entries for totals
-    all_content = offloads + manuals + exports
-
-    if not all_content and not all_time:
+    if not offloads and not all_time:
         if not session:
             print("No active session found.")
             print("Session tracking starts on next SessionStart.")
@@ -159,23 +148,18 @@ def main():
             print("")
             print("Outputs < 512B are shown inline (no savings needed).")
             print("Run commands with larger outputs to see savings.")
-            print("Use /context-save to manually save large content.")
         sys.exit(0)
 
     # Calculate basic stats
-    total_bytes = sum(e.get('bytes', 0) for e in all_content)
-    total_lines = sum(e.get('lines', 0) for e in all_content)
-    total_count = len(all_content)
+    total_bytes = sum(e.get('bytes', 0) for e in offloads)
+    total_lines = sum(e.get('lines', 0) for e in offloads)
+    total_count = len(offloads)
 
-    # Count existing vs cleaned (all content)
-    existing, cleaned = count_existing_files(cwd, all_content)
+    # Count existing vs cleaned
+    existing, cleaned = count_existing_files(cwd, offloads)
 
     # Token calculations
     tokens_inline, tokens_pointers, tokens_saved, reduction_pct = calculate_tokens(total_bytes, total_count)
-
-    # Manual/export stats
-    manual_bytes = sum(e.get('bytes', 0) for e in manuals)
-    export_bytes = sum(e.get('bytes', 0) for e in exports)
 
     # Tier breakdown
     tier2 = [e for e in offloads if 512 <= e.get('bytes', 0) < 4096]
@@ -195,13 +179,13 @@ def main():
     # Sort by bytes descending
     top_cmds = sorted(cmd_stats.items(), key=lambda x: -x[1]['bytes'])[:5]
 
-    # Find biggest output (from all content)
-    biggest = max(all_content, key=lambda e: e.get('bytes', 0)) if all_content else None
+    # Find biggest output
+    biggest = max(offloads, key=lambda e: e.get('bytes', 0)) if offloads else None
 
     # Retrieval stats (if tracking opens)
     opens = entries['opens']
     opened_ids = set(o.get('id', '').upper() for o in opens)
-    retrieved_count = len([e for e in all_content if e.get('id', '').upper() in opened_ids])
+    retrieved_count = len([e for e in offloads if e.get('id', '').upper() in opened_ids])
     retrieval_rate = int((retrieved_count / total_count) * 100) if total_count > 0 else 0
 
     # Session duration
@@ -232,11 +216,6 @@ def main():
                 'existing': existing,
                 'cleaned': cleaned
             },
-            'by_type': {
-                'offloads': {'count': len(offloads), 'bytes': sum(e.get('bytes', 0) for e in offloads)},
-                'manual': {'count': len(manuals), 'bytes': manual_bytes},
-                'export': {'count': len(exports), 'bytes': export_bytes}
-            },
             'tiers': {
                 'compact': {'count': len(tier2), 'bytes': tier2_bytes},
                 'preview': {'count': len(tier3), 'bytes': tier3_bytes}
@@ -264,17 +243,12 @@ def main():
 
     # Storage
     print("Storage")
-    print(f"   Total:         {total_count} outputs ({format_bytes(total_bytes)})")
-    print(f"   Tool outputs:  {len(offloads)}")
-    if manuals:
-        print(f"   Manual saves:  {len(manuals)} ({format_bytes(manual_bytes)})")
-    if exports:
-        print(f"   Exports:       {len(exports)} ({format_bytes(export_bytes)})")
+    print(f"   Offloaded:     {total_count} outputs ({format_bytes(total_bytes)})")
     print(f"   Still exists:  {existing} outputs")
     print(f"   Cleaned up:    {cleaned} outputs (TTL expired)")
     if entries['pins']:
         pinned_ids = set(p.get('id', '').upper() for p in entries['pins'])
-        pinned_count = len([e for e in all_content if e.get('id', '').upper() in pinned_ids])
+        pinned_count = len([e for e in offloads if e.get('id', '').upper() in pinned_ids])
         print(f"   Pinned:        {pinned_count} outputs")
     print("")
 
@@ -297,13 +271,9 @@ def main():
     if biggest:
         print("Biggest Output")
         big_id = biggest.get('id', '????')[:8]
-        big_type = biggest.get('type', 'offload')
-        if big_type == 'offload':
-            big_label = biggest.get('cmd', '?')
-        else:
-            big_label = f"[{big_type}] {biggest.get('title', big_type)[:20]}"
+        big_cmd = biggest.get('cmd', '?')
         big_bytes = format_bytes(biggest.get('bytes', 0))
-        print(f"   [{big_id}] {big_label} ({big_bytes})")
+        print(f"   [{big_id}] {big_cmd} ({big_bytes})")
         print(f"   /context-open {big_id}")
         print("")
 
@@ -336,23 +306,20 @@ Token Savings
    Net savings:   ~13,770 tokens (90% reduction)
 
 Storage
-   Total:         46 outputs (15.8MB)
-   Tool outputs:  38
-   Manual saves:  6 (450KB)
-   Exports:       2 (85KB)
-   Still exists:  38 outputs
+   Offloaded:     42 outputs (15.3MB)
+   Still exists:  34 outputs
    Cleaned up:    8 outputs (TTL expired)
    Pinned:        3 outputs
 
 By Tier
    Inline (<512B):     (shown in context, not tracked)
    Compact (512B-4KB): 15 outputs (42.5KB)
-   Preview (>4KB):     23 outputs (15.2MB)
+   Preview (>4KB):     27 outputs (15.2MB)
 
 Top Commands by Size
    1. pytest       8.2MB (19 runs, 5 failed)
    2. npm          4.1MB (8 runs)
-   3. cargo        2.8MB (7 runs, 1 failed)
+   3. cargo        2.8MB (12 runs, 1 failed)
    4. tsc          128KB (3 runs, 2 failed)
 
 Biggest Output
@@ -360,7 +327,7 @@ Biggest Output
    /context-open A1B2C3D4
 
 Retrieval Rate
-   Outputs opened: 12/46 (26%)
+   Outputs opened: 12/42 (28%)
 
 Session started: 2h 15m ago
 

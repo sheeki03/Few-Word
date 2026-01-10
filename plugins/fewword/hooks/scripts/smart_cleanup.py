@@ -48,14 +48,6 @@ LEGACY_PATTERN = re.compile(
     re.IGNORECASE
 )
 
-# Manual/export pattern (v1.3.4+)
-# Matches: manual_{YYYYMMDD_HHMMSS}_{8hex}[_optional_title].txt
-#          export_{YYYYMMDD_HHMMSS}_{8hex}[_optional_suffix].txt
-MANUAL_EXPORT_PATTERN = re.compile(
-    r'^(manual|export)_(\d{8}_\d{6})_([0-9a-f]{8})(?:_.+)?\.txt$',
-    re.IGNORECASE
-)
-
 
 def is_alias_file(filename: str) -> bool:
     """Check if file is a LATEST alias (should never be deleted)."""
@@ -64,10 +56,8 @@ def is_alias_file(filename: str) -> bool:
 
 def is_offload_file(filename: str) -> tuple[bool, int | None]:
     """
-    Check if file is a real offload/manual/export output.
+    Check if file is a real offload output.
     Returns (is_offload, exit_code or None).
-
-    For manual/export files, exit_code is None (use success TTL).
     """
     # Check modern pattern with exit code
     match = OUTPUT_PATTERN.match(filename)
@@ -78,10 +68,6 @@ def is_offload_file(filename: str) -> tuple[bool, int | None]:
     # Check legacy pattern (treat as success)
     if LEGACY_PATTERN.match(filename):
         return True, None  # None means legacy, use default TTL
-
-    # Check manual/export pattern (treat as success - no exit_code concept)
-    if MANUAL_EXPORT_PATTERN.match(filename):
-        return True, None  # Use success TTL for manual/export
 
     return False, None
 
@@ -153,11 +139,6 @@ def extract_id_from_filename(filename: str) -> str | None:
 
     # Legacy: {cmd}_{ts}_{id}.txt
     match = LEGACY_PATTERN.match(filename)
-    if match:
-        return match.group(3)
-
-    # Manual/export: {type}_{ts}_{id}[_suffix].txt
-    match = MANUAL_EXPORT_PATTERN.match(filename)
     if match:
         return match.group(3)
 

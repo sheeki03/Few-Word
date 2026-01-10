@@ -18,8 +18,6 @@ Search across all offloaded outputs with manifest integration and hard caps to p
 /context-search "error" --since 24h
 /context-search "FAILED" --pinned-only
 /context-search "pattern" --full          # Bypass line cap (still respects file/byte caps)
-/context-search "error" --all-sessions    # Search across all historical sessions
-/context-search "error" --all-sessions --since 7d  # All sessions, last 7 days
 ```
 
 ## Hard Caps (Context Bomb Prevention)
@@ -48,46 +46,6 @@ from datetime import datetime, timezone, timedelta
 
 def get_cwd():
     return os.environ.get('FEWWORD_CWD', os.getcwd())
-
-def get_current_session_id(cwd):
-    """Get current session ID from session.json."""
-    session_file = Path(cwd) / '.fewword' / 'index' / 'session.json'
-    if session_file.exists():
-        try:
-            data = json.loads(session_file.read_text())
-            return data.get('session_id')
-        except Exception:
-            pass
-    return None
-
-def get_all_manifests(cwd):
-    """
-    Get paths to current and archived manifests.
-    Returns list of (path, is_current) tuples, most recent first.
-
-    Rotation format: tool_outputs_YYYY-MM.jsonl (underscore, not dot)
-    """
-    index_dir = Path(cwd) / '.fewword' / 'index'
-    manifests = []
-
-    # Current manifest first
-    current = index_dir / 'tool_outputs.jsonl'
-    if current.exists():
-        manifests.append((current, True))
-
-    # Find archived manifests (tool_outputs_YYYY-MM.jsonl format)
-    try:
-        archived = sorted(
-            index_dir.glob('tool_outputs_*.jsonl'),
-            key=lambda p: p.stat().st_mtime,
-            reverse=True
-        )
-        for arch in archived[:10]:  # Cap at 10 archives to prevent explosion
-            manifests.append((arch, False))
-    except Exception:
-        pass
-
-    return manifests
 
 def parse_duration(duration_str):
     """Parse duration string like '24h', '7d' to timedelta."""
@@ -119,134 +77,69 @@ def calculate_age(iso_timestamp):
     except (ValueError, TypeError, AttributeError):
         return "?"
 
-def get_pinned_ids(cwd, all_sessions=False):
-    """
-    Get set of pinned output IDs, optionally from all manifests.
-
-    Replays pin/unpin events in timestamp order to correctly handle
-    re-pinning after unpin (last event wins).
-    """
-    # Collect all pin/unpin events with timestamps
-    pin_events = []
-
-    # Get manifests to read
-    if all_sessions:
-        manifests = get_all_manifests(cwd)
-    else:
-        manifest_path = Path(cwd) / '.fewword' / 'index' / 'tool_outputs.jsonl'
-        manifests = [(manifest_path, True)] if manifest_path.exists() else []
-
-    for manifest_path, _ in manifests:
-        try:
-            with open(manifest_path, 'r') as f:
-                for line in f:
-                    try:
-                        entry = json.loads(line)
-                        entry_type = entry.get('type')
-                        if entry_type == 'pin':
-                            # Pin entries use pinned_at timestamp
-                            pin_events.append((
-                                entry.get('pinned_at', ''),
-                                entry_type,
-                                entry.get('id', '').upper()
-                            ))
-                        elif entry_type == 'unpin':
-                            # Unpin entries use unpinned_at timestamp
-                            pin_events.append((
-                                entry.get('unpinned_at', ''),
-                                entry_type,
-                                entry.get('id', '').upper()
-                            ))
-                    except (json.JSONDecodeError, KeyError, TypeError):
-                        pass
-        except (FileNotFoundError, IOError):
-            pass
-
-    # Filter out events with empty timestamps (malformed entries), then sort and replay
-    pin_events = [e for e in pin_events if e[0]]  # Filter empty timestamps
-    pin_events.sort(key=lambda x: x[0])
+def get_pinned_ids(cwd):
+    """Get set of pinned output IDs."""
+    manifest_path = Path(cwd) / '.fewword' / 'index' / 'tool_outputs.jsonl'
     pinned = set()
-    for _, event_type, event_id in pin_events:
-        if event_type == 'pin':
-            pinned.add(event_id)
-        elif event_type == 'unpin':
-            pinned.discard(event_id)
+
+    try:
+        with open(manifest_path, 'r') as f:
+            for line in f:
+                try:
+                    entry = json.loads(line)
+                    if entry.get('type') == 'pin':
+                        pinned.add(entry.get('id', '').upper())
+                except (json.JSONDecodeError, KeyError, TypeError):
+                    pass
+    except (FileNotFoundError, IOError):
+        pass
 
     return pinned
 
-def get_searchable_entries(cwd, cmd_filter=None, since=None, pinned_only=False, limit=50, all_sessions=False):
+def get_searchable_entries(cwd, cmd_filter=None, since=None, pinned_only=False, limit=50):
     """Get entries eligible for search, respecting hard caps."""
+    manifest_path = Path(cwd) / '.fewword' / 'index' / 'tool_outputs.jsonl'
     entries = []
+
+    if not manifest_path.exists():
+        return entries
+
     now = datetime.now(timezone.utc)
-    pinned_ids = get_pinned_ids(cwd, all_sessions=all_sessions) if pinned_only else set()
+    pinned_ids = get_pinned_ids(cwd) if pinned_only else set()
 
-    # Get current session ID for filtering (unless --all-sessions)
-    current_session = None if all_sessions else get_current_session_id(cwd)
+    with open(manifest_path, 'r') as f:
+        for line in f:
+            try:
+                entry = json.loads(line)
+                if entry.get('type') != 'offload':
+                    continue
 
-    # Get manifests to search
-    if all_sessions:
-        manifests = get_all_manifests(cwd)
-    else:
-        manifest_path = Path(cwd) / '.fewword' / 'index' / 'tool_outputs.jsonl'
-        manifests = [(manifest_path, True)] if manifest_path.exists() else []
+                # Filter by command
+                if cmd_filter:
+                    cmd = entry.get('cmd_group') or entry.get('cmd')
+                    if cmd != cmd_filter:
+                        continue
 
-    # Collect ALL matching entries first (don't limit during collection)
-    for manifest_path, is_current in manifests:
-        try:
-            with open(manifest_path, 'r') as f:
-                for line in f:
+                # Filter by time
+                if since:
                     try:
-                        entry = json.loads(line)
-                        entry_type = entry.get('type', '')
-
-                        # Include offload, manual, and export types
-                        if entry_type not in ('offload', 'manual', 'export'):
+                        ts = entry.get('created_at', '').replace('Z', '+00:00')
+                        created = datetime.fromisoformat(ts)
+                        if now - created > since:
                             continue
-
-                        # Filter by session (unless --all-sessions)
-                        if current_session and entry.get('session_id') != current_session:
-                            continue
-
-                        # Filter by command (only applies to offload entries)
-                        if cmd_filter:
-                            if entry_type == 'offload':
-                                cmd = entry.get('cmd_group') or entry.get('cmd')
-                                if cmd != cmd_filter:
-                                    continue
-                            else:
-                                # manual/export don't have cmd, skip if cmd filter is set
-                                continue
-
-                        # Filter by time
-                        if since:
-                            try:
-                                ts = entry.get('created_at', '').replace('Z', '+00:00')
-                                created = datetime.fromisoformat(ts)
-                                if now - created > since:
-                                    continue
-                            except (ValueError, TypeError, AttributeError):
-                                pass
-
-                        # Filter pinned only
-                        if pinned_only and entry.get('id', '').upper() not in pinned_ids:
-                            continue
-
-                        entries.append(entry)
-                    except (json.JSONDecodeError, KeyError, TypeError):
+                    except (ValueError, TypeError, AttributeError):
                         pass
-        except (FileNotFoundError, IOError):
-            pass
 
-    # Sort by created_at timestamp (newest first), then limit
-    def get_timestamp(e):
-        try:
-            ts = e.get('created_at', '').replace('Z', '+00:00')
-            return datetime.fromisoformat(ts)
-        except (ValueError, TypeError, AttributeError):
-            return datetime.min.replace(tzinfo=timezone.utc)
+                # Filter pinned only
+                if pinned_only and entry.get('id', '').upper() not in pinned_ids:
+                    continue
 
-    entries.sort(key=get_timestamp, reverse=True)
-    return entries[:limit]
+                entries.append(entry)
+            except (json.JSONDecodeError, KeyError, TypeError):
+                pass
+
+    # Return most recent first, limited
+    return list(reversed(entries))[:limit]
 
 def search_file(path, pattern, max_bytes=2*1024*1024, max_matches=20):
     """Search a file for pattern, respecting size limit."""
@@ -281,7 +174,6 @@ def main():
     since = None
     pinned_only = '--pinned-only' in args
     full_mode = '--full' in args
-    all_sessions = '--all-sessions' in args
 
     i = 0
     while i < len(args):
@@ -303,11 +195,10 @@ def main():
         print("Usage: /context-search <pattern> [options]")
         print("")
         print("Options:")
-        print("  --cmd <name>       Filter by command (e.g., pytest)")
+        print("  --cmd <name>      Filter by command (e.g., pytest)")
         print("  --since <duration> Filter by time (e.g., 24h, 7d)")
-        print("  --pinned-only      Search only pinned outputs")
-        print("  --full             Show more matches (still capped)")
-        print("  --all-sessions     Search across all historical sessions")
+        print("  --pinned-only     Search only pinned outputs")
+        print("  --full            Show more matches (still capped)")
         sys.exit(1)
 
     # Validate pattern is valid regex
@@ -323,7 +214,7 @@ def main():
     MAX_RESULTS_FILES = 10 if not full_mode else 25
 
     # Get searchable entries
-    entries = get_searchable_entries(cwd, cmd_filter, since, pinned_only, limit=MAX_FILES, all_sessions=all_sessions)
+    entries = get_searchable_entries(cwd, cmd_filter, since, pinned_only, limit=MAX_FILES)
 
     if not entries:
         filter_desc = []
@@ -333,8 +224,6 @@ def main():
             filter_desc.append(f"since specified")
         if pinned_only:
             filter_desc.append("pinned-only")
-        if all_sessions:
-            filter_desc.append("all sessions")
 
         print(f"No outputs found to search" + (f" ({', '.join(filter_desc)})" if filter_desc else "") + ".")
         sys.exit(0)
@@ -370,7 +259,7 @@ def main():
 
     # Output
     print(f'Searching for: "{pattern}"')
-    if cmd_filter or since or pinned_only or all_sessions:
+    if cmd_filter or since or pinned_only:
         filters = []
         if cmd_filter:
             filters.append(f"cmd={cmd_filter}")
@@ -378,8 +267,6 @@ def main():
             filters.append(f"since={args[args.index('--since')+1]}")
         if pinned_only:
             filters.append("pinned-only")
-        if all_sessions:
-            filters.append("all-sessions")
         print(f"Filters: {', '.join(filters)}")
     print("")
 
@@ -397,19 +284,11 @@ def main():
         matches = result['matches']
 
         entry_id = entry.get('id', '????')[:8]
-        entry_type = entry.get('type', 'offload')
+        cmd = entry.get('cmd_group') or entry.get('cmd', '?')
+        exit_code = entry.get('exit_code', '?')
         age = calculate_age(entry.get('created_at', ''))
 
-        # Format display based on entry type
-        if entry_type == 'offload':
-            cmd = entry.get('cmd_group') or entry.get('cmd', '?')
-            exit_code = entry.get('exit_code', '?')
-            print(f"[{entry_id}] {cmd} e={exit_code} ({age}) - {len(matches)} matches")
-        else:
-            # manual/export entries use title, no exit_code
-            title = entry.get('title', entry_type)[:30]
-            label = f"[{entry_type}]"
-            print(f"[{entry_id}] {label} {title} ({age}) - {len(matches)} matches")
+        print(f"[{entry_id}] {cmd} e={exit_code} ({age}) - {len(matches)} matches")
 
         # Show matches (capped)
         matches_shown = 0

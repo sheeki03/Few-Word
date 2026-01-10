@@ -91,10 +91,7 @@ def get_manifest_entries(cwd, session_id=None, since=None, cmd_filter=None, fail
         for line in f:
             try:
                 entry = json.loads(line)
-                entry_type = entry.get('type', '')
-
-                # Include offload, manual, and export types
-                if entry_type not in ('offload', 'manual', 'export'):
+                if entry.get('type') != 'offload':
                     continue
 
                 # Filter by session
@@ -111,23 +108,15 @@ def get_manifest_entries(cwd, session_id=None, since=None, cmd_filter=None, fail
                     except (ValueError, TypeError, AttributeError):
                         pass
 
-                # Filter by command (only applies to offload entries)
+                # Filter by command
                 if cmd_filter:
-                    if entry_type == 'offload':
-                        cmd = entry.get('cmd_group') or entry.get('cmd')
-                        if cmd != cmd_filter:
-                            continue
-                    else:
-                        # manual/export don't have cmd, skip if cmd filter is set
+                    cmd = entry.get('cmd_group') or entry.get('cmd')
+                    if cmd != cmd_filter:
                         continue
 
-                # Filter failures (only applies to offload entries)
-                if failures_only:
-                    if entry_type == 'offload' and entry.get('exit_code', 0) == 0:
-                        continue
-                    elif entry_type in ('manual', 'export'):
-                        # manual/export don't have failures, skip if failures_only
-                        continue
+                # Filter failures
+                if failures_only and entry.get('exit_code', 0) == 0:
+                    continue
 
                 entries.append(entry)
             except (json.JSONDecodeError, KeyError, TypeError):
@@ -227,11 +216,11 @@ def main():
     # Group by time buckets (15 min)
     buckets = group_by_time_bucket(entries, bucket_minutes=15)
 
-    # Count failures for summary (only offload entries have exit_code)
-    total_failures = sum(1 for e in entries if e.get('type') == 'offload' and e.get('exit_code', 0) != 0)
+    # Count failures for summary
+    total_failures = sum(1 for e in entries if e.get('exit_code', 0) != 0)
     failure_cmds = defaultdict(int)
     for e in entries:
-        if e.get('type') == 'offload' and e.get('exit_code', 0) != 0:
+        if e.get('exit_code', 0) != 0:
             cmd = e.get('cmd_group') or e.get('cmd', '?')
             failure_cmds[cmd] += 1
 
@@ -246,20 +235,12 @@ def main():
         # Build cell for this bucket
         cells = []
         for entry in bucket_entries[:3]:  # Max 3 per bucket
-            entry_type = entry.get('type', 'offload')
-
-            if entry_type == 'offload':
-                cmd = entry.get('cmd_group') or entry.get('cmd', '?')
-                cmd = truncate(cmd, 8)
-                exit_code = entry.get('exit_code', 0)
-                status = '✗' if exit_code != 0 else '✓'
-                cells.append(f"{status} {cmd}")
-            else:
-                # manual/export: show type label + truncated title
-                title = entry.get('title', entry_type)
-                title = truncate(title, 6)
-                label = 'M' if entry_type == 'manual' else 'E'  # Short labels
-                cells.append(f"[{label}] {title}")
+            cmd = entry.get('cmd_group') or entry.get('cmd', '?')
+            cmd = truncate(cmd, 8)
+            exit_code = entry.get('exit_code', 0)
+            status = '✗' if exit_code != 0 else '✓'
+            entry_id = entry.get('id', '????')[:4]
+            cells.append(f"{status} {cmd}")
 
         cmd_rows.append(cells)
 
@@ -289,12 +270,11 @@ def main():
         failure_summary = ", ".join(f"{cmd}({count})" for cmd, count in sorted(failure_cmds.items(), key=lambda x: -x[1])[:3])
         print(f"Failures: {failure_summary}")
 
-    # Suggest diff if there are failures that later passed (offload only)
+    # Suggest diff if there are failures that later passed
     cmd_history = defaultdict(list)
     for e in entries:
-        if e.get('type') == 'offload':
-            cmd = e.get('cmd_group') or e.get('cmd')
-            cmd_history[cmd].append(e)
+        cmd = e.get('cmd_group') or e.get('cmd')
+        cmd_history[cmd].append(e)
 
     suggestions = []
     for cmd, history in cmd_history.items():

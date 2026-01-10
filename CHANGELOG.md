@@ -2,51 +2,6 @@
 
 All notable changes to FewWord will be documented in this file.
 
-## [1.3.4] - 2026-01-10
-
-### New Features
-- **Manual offloading** (`/context-save`): Manually save large content (subagent outputs, pasted text) without requiring hooks
-  - Supports stdin piping: `echo "content" | /context-save "Title"`
-  - Supports file input: `/context-save "Title" --file /path/to/file`
-  - Applies same redaction rules as automatic offloading
-- **Cross-session search** (`/context-search --all-sessions`): Search across all historical sessions, not just current
-  - Optional `--since 7d` filter for time-bounded cross-session search
-- **MCP allowlist/denylist**: Configure which MCP tools get logged and clamped
-  - Config: `mcp.log.allowlist`, `mcp.log.denylist`, `mcp.clamp.allowlist`, `mcp.clamp.denylist`
-  - Environment: `FEWWORD_MCP_LOG_DENYLIST="mcp__corridor__*|mcp__internal__*"`
-  - Supports glob patterns via `fnmatch`
-- **Session export** (`/context-export`): Export session history as markdown report
-- **Hook capability detection** (`/fewword-doctor --test-hooks`): Detect which hooks are firing in current environment
-
-### Extended Entry Types
-- **Manual entries** (`type: "manual"`): Created via `/context-save`, searchable by title
-- **Export entries** (`type: "export"`): Created via `/context-export`, preserved session snapshots
-- All commands updated to support new entry types:
-  - `/context-open`: Resolves by title for manual/export entries
-  - `/context-recent`: Shows `[manual]`/`[export]` labels, displays title instead of cmd
-  - `/context-search`: Includes manual/export in results with type-aware display
-  - `/context-pin`, `/context-unpin`, `/context-tag`, `/context-note`: Support manual/export entries
-  - `/context-timeline`: Shows `[M]`/`[E]` labels for manual/export entries
-  - `/fewword-stats`: Includes manual/export entries in statistics with type breakdown
-
-### Improvements
-- **context_helpers.py**: Added title-based resolution for manual/export entries
-- **Timeline labels**: Visual distinction between offload (`✓`/`✗`), manual (`[M]`), and export (`[E]`) entries
-- **Diff/Correlate scope**: Explicitly documented as tool-output only (manual/export excluded - lack failure semantics)
-
-### Configuration
-- New config section `mcp` in `.fewwordrc.toml`/`.fewwordrc.json`:
-  ```toml
-  [mcp.log]
-  denylist = ["mcp__corridor__*"]
-
-  [mcp.clamp]
-  allowlist = ["mcp__claude-in-chrome__*"]
-  ```
-- New environment variables:
-  - `FEWWORD_MCP_LOG_ENABLED`, `FEWWORD_MCP_LOG_ALLOWLIST`, `FEWWORD_MCP_LOG_DENYLIST`
-  - `FEWWORD_MCP_CLAMP_ENABLED`, `FEWWORD_MCP_CLAMP_ALLOWLIST`, `FEWWORD_MCP_CLAMP_DENYLIST`
-
 ## [1.3.3] - 2025-01-09
 
 ### Security Hardening

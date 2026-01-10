@@ -77,29 +77,20 @@ def resolve_id(selector, cwd):
     if len(selector) == 8 and all(c in '0123456789ABCDEFabcdef' for c in selector):
         return selector.upper()
 
-    # Command/title name - find latest pinned
+    # Command name - find latest pinned
     try:
         with open(manifest_path, 'r') as f:
             lines = f.readlines()
 
-        # Find latest pinned output for this command/title
+        # Find latest pinned output for this command
         for line in reversed(lines):
             try:
                 entry = json.loads(line)
-                entry_type = entry.get('type', '')
-
-                # Match offload by cmd
-                if entry_type == 'offload' and entry.get('cmd') == selector:
+                if entry.get('type') == 'offload' and entry.get('cmd') == selector:
+                    # Check if this is pinned
                     hex_id = entry.get('id', '').upper()
                     if is_pinned(hex_id, cwd):
                         return hex_id
-
-                # Match manual/export by title (case-insensitive)
-                if entry_type in ('manual', 'export'):
-                    if entry.get('title', '').lower() == selector.lower():
-                        hex_id = entry.get('id', '').upper()
-                        if is_pinned(hex_id, cwd):
-                            return hex_id
             except (json.JSONDecodeError, KeyError, TypeError):
                 pass
     except (FileNotFoundError, IOError):
@@ -108,17 +99,11 @@ def resolve_id(selector, cwd):
     return None
 
 def is_pinned(hex_id, cwd):
-    """
-    Check if output is currently pinned.
-
-    Replays pin/unpin events in timestamp order to correctly handle
-    re-pinning after unpin (last event wins).
-    """
+    """Check if output is pinned."""
     manifest_path = Path(cwd) / '.fewword' / 'index' / 'tool_outputs.jsonl'
-    hex_id = hex_id.upper()
 
-    # Collect pin/unpin events for this ID with timestamps
-    pin_events = []
+    pinned = False
+    unpinned = False
 
     try:
         with open(manifest_path, 'r') as f:
@@ -127,28 +112,18 @@ def is_pinned(hex_id, cwd):
                     entry = json.loads(line)
                     if entry.get('id', '').upper() == hex_id:
                         if entry.get('type') == 'pin':
-                            pin_events.append((entry.get('pinned_at', ''), 'pin'))
+                            pinned = True
                         elif entry.get('type') == 'unpin':
-                            pin_events.append((entry.get('unpinned_at', ''), 'unpin'))
+                            unpinned = True
                 except (json.JSONDecodeError, KeyError, TypeError):
                     pass
     except (FileNotFoundError, IOError):
         pass
 
-    if not pin_events:
-        return False
-
-    # Filter out events with empty timestamps (malformed entries), then sort and replay
-    pin_events = [e for e in pin_events if e[0]]
-    pin_events.sort(key=lambda x: x[0])
-    is_currently_pinned = False
-    for _, event_type in pin_events:
-        is_currently_pinned = (event_type == 'pin')
-
-    return is_currently_pinned
+    return pinned and not unpinned
 
 def get_pinned_path(hex_id, cwd):
-    """Get path to pinned file from manifest."""
+    """Get path to pinned file."""
     manifest_path = Path(cwd) / '.fewword' / 'index' / 'tool_outputs.jsonl'
 
     try:
@@ -157,8 +132,7 @@ def get_pinned_path(hex_id, cwd):
                 try:
                     entry = json.loads(line)
                     if entry.get('type') == 'pin' and entry.get('id', '').upper() == hex_id:
-                        # Pin entries write 'path' (not 'pinned_path')
-                        return entry.get('path')
+                        return entry.get('pinned_path')
                 except (json.JSONDecodeError, KeyError, TypeError):
                     pass
     except (FileNotFoundError, IOError):

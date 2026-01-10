@@ -449,4 +449,3 @@ Cluster 2: 2 similar failures
 - Threshold: 30% similarity required to show as match
 - Limited to last 50 failures to prevent full history scan
 - Use `/context-diff` to compare correlated failures
-- **Tool failures only**: Correlate only works with offload entries that have failed (exit_code != 0). Manual and export entries are not supported - they lack the failure semantics needed for correlation analysis.

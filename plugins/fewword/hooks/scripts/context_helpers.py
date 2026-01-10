@@ -63,13 +63,12 @@ def get_index_path(index_path: str) -> str:
 
 def resolve_id(selector: str, manifest_path: str, index_path: str) -> str:
     """
-    Resolve selector (number/hex/cmd/title) to hex ID.
+    Resolve selector (number/hex/cmd) to hex ID.
 
-    Supports four modes:
+    Supports three modes:
     1. Number (1-99): Lookup from .recent_index
     2. Hex ID (8 chars): Validate and return
-    3. Command name: Find latest exact match in manifest (offload entries)
-    4. Title: Find latest exact match by title (manual/export entries)
+    3. Command name: Find latest exact match in manifest
     """
     selector = selector.strip()
 
@@ -99,7 +98,7 @@ def resolve_id(selector: str, manifest_path: str, index_path: str) -> str:
         if all(c in '0123456789ABCDEFabcdef' for c in selector):
             return selector.upper()
 
-    # Mode 3 & 4: Command name OR title - find latest exact match in manifest
+    # Mode 3: Command name - find latest exact match in manifest
     try:
         with open(manifest_path, 'r') as f:
             lines = f.readlines()
@@ -111,16 +110,9 @@ def resolve_id(selector: str, manifest_path: str, index_path: str) -> str:
                 continue
             try:
                 entry = json.loads(line)
-                entry_type = entry.get('type', '')
-
-                # Mode 3: Match offload entries by cmd
-                if entry_type == 'offload':
+                # Only match offload entries, not pins or other types
+                if entry.get('type') == 'offload':
                     if entry.get('cmd') == selector:  # Exact match only
-                        return entry.get('id', '').upper()
-
-                # Mode 4: Match manual/export entries by title (case-insensitive)
-                if entry_type in ('manual', 'export'):
-                    if entry.get('title', '').lower() == selector.lower():
                         return entry.get('id', '').upper()
             except json.JSONDecodeError:
                 continue
@@ -134,8 +126,7 @@ def lookup_entry(hex_id: str, manifest_path: str) -> dict:
     """
     Lookup full entry from manifest by hex ID.
 
-    Returns dict with entry fields. For offload entries: id, cmd, exit_code, bytes, lines, path, created_at
-    For manual/export entries: id, title, source, bytes, lines, path, created_at (no exit_code)
+    Returns dict with: id, cmd, exit_code, bytes, lines, path, created_at
     """
     hex_id = hex_id.upper()
     try:
@@ -146,8 +137,7 @@ def lookup_entry(hex_id: str, manifest_path: str) -> dict:
                     continue
                 try:
                     entry = json.loads(line)
-                    # Match offload, manual, and export entry types
-                    if entry.get('type') in ('offload', 'manual', 'export'):
+                    if entry.get('type') == 'offload':
                         if entry.get('id', '').upper() == hex_id:
                             return entry
                 except json.JSONDecodeError:

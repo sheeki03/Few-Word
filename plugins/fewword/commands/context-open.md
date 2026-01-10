@@ -16,17 +16,13 @@ Retrieve offloaded output with a "peek" preview by default. Only dumps full cont
 /context-open A1B2              # By hex ID
 /context-open 1                 # By number from /context-recent
 /context-open pytest            # Latest output from 'pytest' command
-/context-open "My title"        # By title (for manual/export entries)
 
-# Shortcut flags (v1.3.3) - NOTE: these only search tool outputs (type: offload)
-/context-open --last            # Most recent tool output (any command)
+# NEW: Shortcut flags (v1.3.3)
+/context-open --last            # Most recent output (any command)
 /context-open --last pytest     # Most recent pytest output
-/context-open --last-fail       # Most recent failed tool output (exit != 0)
+/context-open --last-fail       # Most recent failed output (exit != 0)
 /context-open --last-fail pytest  # Most recent failed pytest
 /context-open --nth 2 pytest    # 2nd most recent pytest output
-
-# For manual entries, use title-based resolution:
-/context-open "Explore results" # Find by title (manual/export entries)
 
 Output flags:
   --full                        # Print entire file
@@ -257,9 +253,9 @@ for entry in reversed(entries):
      exit 1
    fi
 
-   # Extract fields (with fallbacks for manual/export entries)
-   cmd=$(echo "$entry" | python3 -c "import sys,json; e=json.load(sys.stdin); print(e.get('cmd') or e.get('title') or e.get('type','unknown'))")
-   exit_code=$(echo "$entry" | python3 -c "import sys,json; e=json.load(sys.stdin); print(e.get('exit_code','-') if 'exit_code' in e else '-')")
+   # Extract fields
+   cmd=$(echo "$entry" | python3 -c "import sys,json; print(json.load(sys.stdin).get('cmd',''))")
+   exit_code=$(echo "$entry" | python3 -c "import sys,json; print(json.load(sys.stdin).get('exit_code',0))")
    bytes=$(echo "$entry" | python3 -c "import sys,json; print(json.load(sys.stdin).get('bytes',0))")
    lines=$(echo "$entry" | python3 -c "import sys,json; print(json.load(sys.stdin).get('lines',0))")
    path=$(echo "$entry" | python3 -c "import sys,json; print(json.load(sys.stdin).get('path',''))")
@@ -370,8 +366,4 @@ for entry in reversed(entries):
 - IDs are case-insensitive (a1b2c3d4 = A1B2C3D4)
 - Numbers (1, 2, 3) reference the list from /context-recent
 - Command names find the latest exact match (not substring)
-- Titles find the latest match for manual/export entries (case-insensitive)
 - --grep output is capped at 50 lines / 4KB to prevent context explosion
-- **--last, --last-fail, --nth** only search tool outputs (type: offload)
-  - For manual entries, use title-based resolution: `/context-open "my title"`
-- Manual/export entries display `-` for exit_code
