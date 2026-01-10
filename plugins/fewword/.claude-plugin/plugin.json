@@ -8,7 +8,6 @@
   "repository": "https://github.com/sheeki03/Few-Word",
   "license": "MIT",
   "keywords": ["context", "tokens", "offload", "performance"],
-  "hooks": "./hooks/hooks.json",
   "commands": "./commands",
   "skills": "./skills"
 }
