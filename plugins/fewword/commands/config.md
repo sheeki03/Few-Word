@@ -10,16 +10,16 @@ Display the effective FewWord configuration and where each setting comes from.
 
 ```bash
 # Show full config
-/fewword-config
+/config
 
 # Show specific section
-/fewword-config thresholds
+/config thresholds
 
 # Validate config file syntax
-/fewword-config --validate
+/config --validate
 
 # Output as JSON
-/fewword-config --json
+/config --json
 ```
 
 ## Implementation
@@ -267,7 +267,7 @@ Configuration sources (higher wins):
   make = ["gmake", "cmake --build"]
 
 [pointer]
-  open_cmd = "/context-open"
+  open_cmd = "/open"
   show_path = false
   verbose = false
   peek_on_pointer = false

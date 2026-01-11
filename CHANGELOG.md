@@ -5,14 +5,14 @@ All notable changes to FewWord will be documented in this file.
 ## [1.3.4] - 2026-01-10
 
 ### New Features
-- **Manual offloading** (`/context-save`): Save arbitrary content to FewWord storage with custom labels
-- **Session export** (`/context-export`): Export session history as markdown report
-- **Cross-session search** (`/context-search --all-sessions`): Search across all sessions, not just current
+- **Manual offloading** (`/save`): Save arbitrary content to FewWord storage with custom labels
+- **Session export** (`/export`): Export session history as markdown report
+- **Cross-session search** (`/search --all-sessions`): Search across all sessions, not just current
 - **MCP allowlist/denylist**: Configure which MCP tools get logged/clamped via `mcp_allowlist` and `mcp_denylist` in config
 
 ### Extended Entry Types
-- Manual entries (`type: "manual"`) for `/context-save`
-- Export entries (`type: "export"`) for `/context-export`
+- Manual entries (`type: "manual"`) for `/save`
+- Export entries (`type: "export"`) for `/export`
 - All commands updated to support new entry types in filtering and display
 
 ### Improved
@@ -52,28 +52,28 @@ All notable changes to FewWord will be documented in this file.
 - **Exception types**: Fixed `auto_pin.py` catching wrong exception type
 
 ### Documentation
-- **Fixed example numbering** in `fewword-config.md` (was 1,2,4 → now 1,2,3,4)
+- **Fixed example numbering** in `config.md` (was 1,2,4 → now 1,2,3,4)
 - **Fixed ID truncation** in `context-search.md` tip (4-char → 8-char to match output)
-- **Fixed retention defaults** in `fewword-help.md` (prose now matches code: 24h/48h)
+- **Fixed retention defaults** in `help.md` (prose now matches code: 24h/48h)
 
 ## [1.3.1] - 2025-01-09
 
 ### Added
-- **Peek-first retrieval**: `/context-open` now shows head 3 + tail 5 by default (~60 tokens)
-- **Flags for `/context-open`**:
+- **Peek-first retrieval**: `/open` now shows head 3 + tail 5 by default (~60 tokens)
+- **Flags for `/open`**:
   - `--full` - Print entire file
   - `--head N` - Print first N lines
   - `--tail N` - Print last N lines
   - `--grep "pattern"` - Search with output cap (50 lines / 4KB)
   - `--grep-i "pattern"` - Case-insensitive search
-- **Numbered indexes**: `/context-recent` shows numbered list with age
+- **Numbered indexes**: `/recent` shows numbered list with age
 - **Multi-mode ID resolution**: Use number (`1`), hex ID (`A1B2`), or command name (`pytest`)
 - **Cross-platform age calculation**: Python stdlib (works on macOS, Linux, Windows)
 - **Session-scoped index**: `.recent_index_<session_id>` with Windows-safe pointer fallback
 - **Opt-in peek on pointer**: `FEWWORD_PEEK_ON_POINTER=1` adds tail preview to Tier 2 failures
 
 ### Changed
-- `/context-open` defaults to peek instead of full cat (reduces token cost from ~500+ to ~60)
+- `/open` defaults to peek instead of full cat (reduces token cost from ~500+ to ~60)
 - Grep output capped at 50 lines / 4KB to prevent context explosion
 - Flag parsing uses proper `while [ $# -gt 0 ]` loop with missing-value guards
 
@@ -88,18 +88,18 @@ All notable changes to FewWord will be documented in this file.
   - 512B - 4KB: Compact pointer only (~35 tokens)
   - \> 4KB: Compact pointer + tail preview (failures only)
 - **Ultra-compact pointers**: Reduced from ~200 tokens to ~35 tokens
-  - Format: `[fw A1B2C3D4] pytest e=1 45K 882L | /context-open A1B2C3D4`
-- **Session tracking**: Per-session stats via `/fewword-stats`
+  - Format: `[fw A1B2C3D4] pytest e=1 45K 882L | /open A1B2C3D4`
+- **Session tracking**: Per-session stats via `/stats`
 - **New commands**:
-  - `/context-open <id>` - Retrieve offloaded output by ID
-  - `/fewword-stats` - Show session statistics and token savings
-  - `/fewword-version` - Show installed version
+  - `/open <id>` - Retrieve offloaded output by ID
+  - `/stats` - Show session statistics and token savings
+  - `/version` - Show installed version
 - **Update notifications**: Automatic check on SessionStart
 
 ### Changed
 - Preview only shown for failures (exit != 0), not successes
 - Improved ID validation (8-char hex check) in commands
-- Better error handling for `mv` failures in `/context-pin`
+- Better error handling for `mv` failures in `/pin`
 - Fixed MB decimal calculation in stats display
 - Fixed `.gitignore` pattern matching
 
@@ -124,9 +124,9 @@ All notable changes to FewWord will be documented in this file.
 ## [1.1.0] - 2025-01-07
 
 ### Added
-- `/context-recent` command for recovery after context compaction
-- `/context-pin` command to preserve important outputs
-- `/context-search` command to search offloaded files
+- `/recent` command for recovery after context compaction
+- `/pin` command to preserve important outputs
+- `/search` command to search offloaded files
 - LATEST symlinks for quick access to most recent outputs
 
 ## [1.0.0] - 2025-01-06

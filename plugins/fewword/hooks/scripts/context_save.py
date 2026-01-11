@@ -237,7 +237,7 @@ def main():
                 print("Error: --source requires a value")
                 sys.exit(1)
         elif args[i] in ('--help', '-h'):
-            print("Usage: /context-save \"title\" [--file path] [--source hint]")
+            print("Usage: /save \"title\" [--file path] [--source hint]")
             print("")
             print("Save large content to FewWord scratch with pointer.")
             print("")
@@ -247,8 +247,8 @@ def main():
             print("  --source    Source hint: subagent, paste, tool (default: manual)")
             print("")
             print("Examples:")
-            print("  echo \"output\" | /context-save \"My output\"")
-            print("  /context-save \"Build log\" --file /tmp/build.log")
+            print("  echo \"output\" | /save \"My output\"")
+            print("  /save \"Build log\" --file /tmp/build.log")
             sys.exit(0)
         elif not args[i].startswith('--') and title is None:
             title = args[i]
@@ -260,11 +260,11 @@ def main():
     if not title:
         print("Error: title required")
         print("")
-        print("Usage: /context-save \"title\" [--file path] [--source hint]")
+        print("Usage: /save \"title\" [--file path] [--source hint]")
         print("")
         print("Examples:")
-        print("  echo \"output\" | /context-save \"My output\"")
-        print("  /context-save \"Build log\" --file /tmp/build.log")
+        print("  echo \"output\" | /save \"My output\"")
+        print("  /save \"Build log\" --file /tmp/build.log")
         sys.exit(1)
 
     # Read content
@@ -284,8 +284,8 @@ def main():
             print("Error: no content provided")
             print("")
             print("Pipe content to stdin or use --file:")
-            print("  echo \"output\" | /context-save \"title\"")
-            print("  /context-save \"title\" --file /path/to/file")
+            print("  echo \"output\" | /save \"title\"")
+            print("  /save \"title\" --file /path/to/file")
             sys.exit(1)
         encoding = sys.stdin.encoding or 'utf-8'
         content = sys.stdin.buffer.read().decode(encoding, 'replace')
@@ -360,7 +360,7 @@ def main():
     size_str = format_size(byte_count)
     display_title = title[:40] + '...' if len(title) > 40 else title
 
-    print(f"[fw {event_id}] {display_title} {size_str} {line_count}L | /context-open {event_id}")
+    print(f"[fw {event_id}] {display_title} {size_str} {line_count}L | /open {event_id}")
 
     if redact_count > 0:
         print(f"  ({redact_count} items redacted)", file=sys.stderr)

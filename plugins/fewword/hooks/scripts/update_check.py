@@ -3,7 +3,7 @@
 SessionStart hook: Check for plugin updates.
 
 Compares installed version with latest on GitHub and notifies user if outdated.
-Runs silently if up-to-date or if check fails (best-effort, non-blocking).
+Displays notification directly in terminal via /dev/tty on every session start.
 """
 
 import os
@@ -19,7 +19,6 @@ CHECK_TIMEOUT = 3  # seconds
 
 def get_installed_version() -> str | None:
     """Read installed version from plugin.json."""
-    # CLAUDE_PLUGIN_ROOT points to the plugin directory
     plugin_root = os.environ.get('CLAUDE_PLUGIN_ROOT', '')
     if not plugin_root:
         return None
@@ -50,15 +49,40 @@ def get_latest_version() -> str | None:
 def parse_version(v: str) -> tuple:
     """Parse version string to comparable tuple."""
     try:
-        parts = v.split('.')
-        return tuple(int(p) for p in parts)
+        return tuple(int(p) for p in v.split('.'))
     except (ValueError, AttributeError):
         return (0, 0, 0)
 
 
+def notify_user(installed: str, latest: str) -> None:
+    """Display update notification in terminal."""
+    lines = [
+        f"FewWord plugin update: v{installed} → v{latest}",
+        "Run: /fewword:update",
+    ]
+    border = '=' * max(len(line) for line in lines)
+    message = '\n'.join([border, *lines, border])
+
+    # Try writing directly to terminal (visible to user)
+    tty_path = 'CONOUT$' if os.name == 'nt' else '/dev/tty'
+    try:
+        with open(tty_path, 'w') as tty:
+            # Add color if terminal supports it
+            if os.isatty(tty.fileno()):
+                message = f"\033[1;33m{message}\033[0m"
+            tty.write(f"\n{message}\n")
+            tty.flush()
+            return
+    except OSError:
+        pass
+
+    # Fallback: stdout (goes to system reminders)
+    print(f"[fewword] Update: v{installed} → v{latest}")
+    print(f"[fewword] Run: /fewword:update")
+
+
 def main():
     """Check for updates and notify if newer version available."""
-    # Skip if disabled
     if os.environ.get('FEWWORD_DISABLE_UPDATE_CHECK'):
         return
 
@@ -70,10 +94,8 @@ def main():
     if not latest:
         return  # Network issue, fail silently
 
-    # Compare versions
     if parse_version(latest) > parse_version(installed):
-        print(f"[fewword] Update available: {installed} → {latest}")
-        print(f"[fewword] Run: claude plugin update fewword@sheeki03-Few-Word")
+        notify_user(installed, latest)
 
 
 if __name__ == "__main__":

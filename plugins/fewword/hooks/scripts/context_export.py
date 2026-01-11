@@ -455,7 +455,7 @@ def generate_report(cwd, session_id=None, all_time=False):
             lines.append(f"- Size: {format_bytes(entry.get('bytes', 0))}")
             lines.append(f"- Lines: {entry.get('lines', '?')}")
             open_id = raw_id or display_id
-            lines.append(f"- Retrieve: `/context-open {open_id}`")
+            lines.append(f"- Retrieve: `/open {open_id}`")
 
             if entry_notes:
                 lines.append(f"- Notes:")
@@ -575,7 +575,7 @@ def main():
         # Output pointer
         size_str = format_bytes(byte_count)
         title = f"Session export {date_str}"
-        print(f"[fw {event_id}] {title} {size_str} {line_count}L | /context-open {event_id}")
+        print(f"[fw {event_id}] {title} {size_str} {line_count}L | /open {event_id}")
     else:
         size_str = format_bytes(byte_count)
         print(f"Exported to: {output_path}")

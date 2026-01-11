@@ -13,9 +13,9 @@ Remove a pinned output, moving it back to scratch for normal TTL cleanup.
 ## Usage
 
 ```bash
-/context-unpin A1B2               # By hex ID
-/context-unpin 1                  # By number from /context-recent
-/context-unpin pytest             # Latest pinned pytest output
+/unpin A1B2               # By hex ID
+/unpin 1                  # By number from /recent
+/unpin pytest             # Latest pinned pytest output
 ```
 
 ## Implementation
@@ -182,12 +182,12 @@ def main():
     cwd = get_cwd()
 
     if not args:
-        print("Usage: /context-unpin <selector>")
+        print("Usage: /unpin <selector>")
         print("")
         print("Examples:")
-        print("  /context-unpin A1B2       # By hex ID")
-        print("  /context-unpin 1          # By number from /context-recent")
-        print("  /context-unpin pytest     # Latest pinned pytest output")
+        print("  /unpin A1B2       # By hex ID")
+        print("  /unpin 1          # By number from /recent")
+        print("  /unpin pytest     # Latest pinned pytest output")
         sys.exit(1)
 
     selector = args[0]
@@ -195,7 +195,7 @@ def main():
 
     if not hex_id:
         print(f"Error: Could not resolve '{selector}' to an output ID.")
-        print("Use /context-recent to see available outputs.")
+        print("Use /recent to see available outputs.")
         sys.exit(1)
 
     if not is_pinned(hex_id, cwd):
@@ -218,4 +218,4 @@ if __name__ == '__main__':
 - Unpinned outputs return to normal TTL cleanup schedule
 - The pinned copy in memory/pinned is deleted
 - The original in scratch/ may still exist (until TTL expires)
-- Use `/context-recent --pinned` to see currently pinned outputs
+- Use `/recent --pinned` to see currently pinned outputs

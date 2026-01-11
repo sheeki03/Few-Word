@@ -34,12 +34,12 @@ FewWord is a context engineering plugin for Claude Code that automatically offlo
 
 **Compact pointer (~35 tokens):**
 ```
-[fw A1B2C3D4] pytest e=0 45K 882L | /context-open A1B2C3D4
+[fw A1B2C3D4] pytest e=0 45K 882L | /open A1B2C3D4
 ```
 
 **With failure preview (exit != 0):**
 ```
-[fw E5F6G7H8] pytest e=1 45K 234L | /context-open E5F6G7H8
+[fw E5F6G7H8] pytest e=1 45K 234L | /open E5F6G7H8
 FAILED test_auth.py::test_login - AssertionError
 FAILED test_api.py::test_endpoint - TimeoutError
 2 failed, 48 passed in 12.34s
@@ -51,139 +51,139 @@ FAILED test_api.py::test_endpoint - TimeoutError
 
 | Command | Description |
 |---------|-------------|
-| `/context-open <id>` | Retrieve output by ID, number, or command name |
-| `/context-recent` | Show recent outputs with numbered list |
-| `/context-search <pattern>` | Search across all outputs (with hard caps) |
-| `/context-diff <cmd>` | Compare two command outputs |
+| `/open <id>` | Retrieve output by ID, number, or command name |
+| `/recent` | Show recent outputs with numbered list |
+| `/search <pattern>` | Search across all outputs (with hard caps) |
+| `/diff <cmd>` | Compare two command outputs |
 
 ### Organization Commands
 
 | Command | Description |
 |---------|-------------|
-| `/context-pin <id>` | Pin output to prevent cleanup |
-| `/context-unpin <id>` | Unpin a pinned output |
-| `/context-tag <id> <tags>` | Add tags to output |
-| `/context-note <id> "note"` | Add notes to output |
+| `/pin <id>` | Pin output to prevent cleanup |
+| `/unpin <id>` | Unpin a pinned output |
+| `/tag <id> <tags>` | Add tags to output |
+| `/note <id> "note"` | Add notes to output |
 
 ### Analysis Commands
 
 | Command | Description |
 |---------|-------------|
-| `/fewword-stats` | Token savings and session statistics |
-| `/context-timeline` | Visual session history |
-| `/context-correlate <id>` | Find related failures |
+| `/stats` | Token savings and session statistics |
+| `/timeline` | Visual session history |
+| `/correlate <id>` | Find related failures |
 
 ### System Commands
 
 | Command | Description |
 |---------|-------------|
-| `/fewword-help` | This help information |
-| `/fewword-onboarding` | Interactive tutorial |
-| `/fewword-doctor` | System health check |
-| `/fewword-config` | Show effective configuration |
-| `/context-init` | Manual setup (usually automatic) |
-| `/context-cleanup` | View storage and clean up |
-| `/context-save <title>` | Manually save content to FewWord storage |
-| `/context-export` | Export session history as markdown report |
+| `/help` | This help information |
+| `/onboarding` | Interactive tutorial |
+| `/doctor` | System health check |
+| `/config` | Show effective configuration |
+| `/init` | Manual setup (usually automatic) |
+| `/cleanup` | View storage and clean up |
+| `/save <title>` | Manually save content to FewWord storage |
+| `/export` | Export session history as markdown report |
 
 ---
 
 ## Command Details
 
-### /context-open
+### /open
 
 Retrieve an offloaded output with multiple selector options.
 
 ```bash
-/context-open A1B2             # By hex ID
-/context-open 1                # By number from /context-recent
-/context-open pytest           # Latest output from 'pytest'
-/context-open --last           # Most recent output (any command)
-/context-open --last pytest    # Most recent pytest output
-/context-open --last-fail      # Most recent failed output
-/context-open --nth 2 pytest   # 2nd most recent pytest output
+/open A1B2             # By hex ID
+/open 1                # By number from /recent
+/open pytest           # Latest output from 'pytest'
+/open --last           # Most recent output (any command)
+/open --last pytest    # Most recent pytest output
+/open --last-fail      # Most recent failed output
+/open --nth 2 pytest   # 2nd most recent pytest output
 
 # Output flags
-/context-open A1B2 --full      # Full content
-/context-open A1B2 --head 50   # First 50 lines
-/context-open A1B2 --tail 50   # Last 50 lines
-/context-open A1B2 --grep "pattern"  # Search within output
+/open A1B2 --full      # Full content
+/open A1B2 --head 50   # First 50 lines
+/open A1B2 --tail 50   # Last 50 lines
+/open A1B2 --grep "pattern"  # Search within output
 ```
 
-### /context-recent
+### /recent
 
 Show recent offloaded outputs. **Primary recovery path after context compaction.**
 
 ```bash
-/context-recent                # Last 10 outputs
-/context-recent --all          # All outputs
-/context-recent --pinned       # Pinned outputs only
-/context-recent --tag <tag>    # Filter by tag
+/recent                # Last 10 outputs
+/recent --all          # All outputs
+/recent --pinned       # Pinned outputs only
+/recent --tag <tag>    # Filter by tag
 ```
 
-### /context-search
+### /search
 
 Search across all outputs with hard caps to prevent context explosion.
 
 ```bash
-/context-search "AssertionError"
-/context-search "error" --cmd pytest
-/context-search "pattern" --since 24h
-/context-search "FAILED" --pinned-only
-/context-search "pattern" --full       # More results (still capped)
+/search "AssertionError"
+/search "error" --cmd pytest
+/search "pattern" --since 24h
+/search "FAILED" --pinned-only
+/search "pattern" --full       # More results (still capped)
 ```
 
 **Hard caps:** 50 files, 2MB/file, 50 lines output
 
-### /context-diff
+### /diff
 
 Compare two command outputs with noise stripping.
 
 ```bash
-/context-diff pytest              # Diff last 2 pytest runs
-/context-diff A1B2 --prev         # Diff A1B2 vs previous
-/context-diff A1B2 C3D4           # Diff two specific outputs
-/context-diff pytest --stat       # Summary only (default)
-/context-diff pytest --full       # Full unified diff
+/diff pytest              # Diff last 2 pytest runs
+/diff A1B2 --prev         # Diff A1B2 vs previous
+/diff A1B2 C3D4           # Diff two specific outputs
+/diff pytest --stat       # Summary only (default)
+/diff pytest --full       # Full unified diff
 ```
 
-### /fewword-stats
+### /stats
 
 Show comprehensive statistics and token savings.
 
 ```bash
-/fewword-stats                # Current session
-/fewword-stats --json         # Machine-readable
-/fewword-stats --all-time     # Across all sessions
+/stats                # Current session
+/stats --json         # Machine-readable
+/stats --all-time     # Across all sessions
 ```
 
-### /context-timeline
+### /timeline
 
 Visual timeline of session activity.
 
 ```bash
-/context-timeline             # Current session
-/context-timeline --last 2h   # Last 2 hours
-/context-timeline --cmd pytest
-/context-timeline --failures
+/timeline             # Current session
+/timeline --last 2h   # Last 2 hours
+/timeline --cmd pytest
+/timeline --failures
 ```
 
-### /context-correlate
+### /correlate
 
 Find related failures through pattern matching.
 
 ```bash
-/context-correlate A1B2       # Find related failures
-/context-correlate --cluster  # Group failures by similarity
+/correlate A1B2       # Find related failures
+/correlate --cluster  # Group failures by similarity
 ```
 
-### /fewword-doctor
+### /doctor
 
 Self-diagnostics with optional repair.
 
 ```bash
-/fewword-doctor               # Health check
-/fewword-doctor --fix         # Attempt safe repairs
+/doctor               # Health check
+/doctor --fix         # Attempt safe repairs
 ```
 
 ---
@@ -328,7 +328,7 @@ export FEWWORD_DISABLE=1
 
 ## Learn More
 
-- Tutorial: `/fewword-onboarding`
-- Health check: `/fewword-doctor`
-- Current config: `/fewword-config`
+- Tutorial: `/onboarding`
+- Health check: `/doctor`
+- Current config: `/config`
 - GitHub: https://github.com/sheeki03/Few-Word

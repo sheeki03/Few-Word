@@ -65,7 +65,7 @@ DEFAULTS = {
         'make': ['gmake', 'cmake --build'],
     },
     'pointer': {
-        'open_cmd': '/context-open',
+        'open_cmd': '/open',
         'show_path': False,
         'verbose': False,
         'peek_on_pointer': False,

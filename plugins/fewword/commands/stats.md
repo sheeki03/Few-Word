@@ -9,9 +9,9 @@ Show comprehensive statistics about offloaded outputs, token savings, and retrie
 ## Usage
 
 ```bash
-/fewword-stats                    # Current session stats
-/fewword-stats --json             # Output as JSON
-/fewword-stats --all-time         # Stats across all sessions
+/stats                    # Current session stats
+/stats --json             # Output as JSON
+/stats --all-time         # Stats across all sessions
 ```
 
 ## Implementation
@@ -274,7 +274,7 @@ def main():
         big_cmd = biggest.get('cmd', '?')
         big_bytes = format_bytes(biggest.get('bytes', 0))
         print(f"   [{big_id}] {big_cmd} ({big_bytes})")
-        print(f"   /context-open {big_id}")
+        print(f"   /open {big_id}")
         print("")
 
     # Retrieval Rate
@@ -287,7 +287,7 @@ def main():
         print(f"Session started: {duration_str} ago")
 
     print("")
-    print("Commands: /context-recent | /context-timeline | /fewword-doctor")
+    print("Commands: /recent | /timeline | /doctor")
 
 if __name__ == '__main__':
     main()
@@ -324,14 +324,14 @@ Top Commands by Size
 
 Biggest Output
    [A1B2C3D4] pytest (2.1MB)
-   /context-open A1B2C3D4
+   /open A1B2C3D4
 
 Retrieval Rate
    Outputs opened: 12/42 (28%)
 
 Session started: 2h 15m ago
 
-Commands: /context-recent | /context-timeline | /fewword-doctor
+Commands: /recent | /timeline | /doctor
 ```
 
 ## Notes

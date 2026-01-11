@@ -13,11 +13,11 @@ Search across all offloaded outputs with manifest integration and hard caps to p
 ## Usage
 
 ```bash
-/context-search "AssertionError"
-/context-search "connection refused" --cmd pytest
-/context-search "error" --since 24h
-/context-search "FAILED" --pinned-only
-/context-search "pattern" --full          # Bypass line cap (still respects file/byte caps)
+/search "AssertionError"
+/search "connection refused" --cmd pytest
+/search "error" --since 24h
+/search "FAILED" --pinned-only
+/search "pattern" --full          # Bypass line cap (still respects file/byte caps)
 ```
 
 ## Hard Caps (Context Bomb Prevention)
@@ -192,7 +192,7 @@ def main():
             i += 1
 
     if not pattern:
-        print("Usage: /context-search <pattern> [options]")
+        print("Usage: /search <pattern> [options]")
         print("")
         print("Options:")
         print("  --cmd <name>      Filter by command (e.g., pytest)")
@@ -329,7 +329,7 @@ def main():
     print("")
     if results:
         first_id = results[0]['entry'].get('id', '')[:8]
-        print(f'Tip: /context-open {first_id} --grep "{pattern}"')
+        print(f'Tip: /open {first_id} --grep "{pattern}"')
 
 if __name__ == '__main__':
     main()
@@ -358,7 +358,7 @@ Found 7 matches across 3 outputs:
 Total: 7 matches in 3 files, scanned 15 files
 Capped at: max 50 lines
 
-Tip: /context-open A1B2C3D4 --grep "AssertionError"
+Tip: /open A1B2C3D4 --grep "AssertionError"
 ```
 
 ## Notes

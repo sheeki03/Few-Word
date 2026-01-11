@@ -8,7 +8,7 @@ Pin an offloaded output to permanent storage. Pinned files are never auto-delete
 
 ## Usage
 
-`/context-pin <id>` where `<id>` is the 8-character hex ID from `/context-recent` or the offload message.
+`/pin <id>` where `<id>` is the 8-character hex ID from `/recent` or the offload message.
 
 ## Steps
 
@@ -35,7 +35,7 @@ Pin an offloaded output to permanent storage. Pinned files are never auto-delete
 
    if [ -z "$entry" ]; then
      echo "Error: ID '$id' not found in manifest"
-     echo "Use /context-recent to see available IDs"
+     echo "Use /recent to see available IDs"
      exit 1
    fi
 

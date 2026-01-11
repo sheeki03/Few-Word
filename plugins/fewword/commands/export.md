@@ -16,16 +16,16 @@ Export session history as a markdown report, saved to FewWord storage with a poi
 ## Usage
 
 ```bash
-/context-export                     # Export current session
-/context-export --all-time          # Export all sessions
-/context-export --output report.txt # Custom output path
+/export                     # Export current session
+/export --all-time          # Export all sessions
+/export --output report.txt # Custom output path
 ```
 
 ## Output
 
 Returns a compact pointer to the exported report:
 ```
-[fw a1b2c3d4] Session export 2026-01-10 12.5KB 245L | /context-open a1b2c3d4
+[fw a1b2c3d4] Session export 2026-01-10 12.5KB 245L | /open a1b2c3d4
 ```
 
 ## Implementation

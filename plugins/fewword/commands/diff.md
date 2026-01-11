@@ -16,10 +16,10 @@ Compare two command outputs with noise stripping and summary view.
 ## Usage
 
 ```bash
-/context-diff pytest              # Diff last 2 pytest runs
-/context-diff A1B2 --prev         # Diff A1B2 vs previous of same cmd
-/context-diff A1B2 C3D4           # Diff two specific outputs
-/context-diff pytest --last 3     # Diff last 3 runs (multi-diff)
+/diff pytest              # Diff last 2 pytest runs
+/diff A1B2 --prev         # Diff A1B2 vs previous of same cmd
+/diff A1B2 C3D4           # Diff two specific outputs
+/diff pytest --last 3     # Diff last 3 runs (multi-diff)
 
 Output flags:
   --stat                          # Summary only (DEFAULT)
@@ -247,16 +247,16 @@ def main():
                 sys.exit(1)
     else:
         print("Usage:")
-        print("  /context-diff pytest              # Diff last 2 pytest runs")
-        print("  /context-diff A1B2 --prev         # Diff A1B2 vs previous")
-        print("  /context-diff A1B2 C3D4           # Diff two specific outputs")
+        print("  /diff pytest              # Diff last 2 pytest runs")
+        print("  /diff A1B2 --prev         # Diff A1B2 vs previous")
+        print("  /diff A1B2 C3D4           # Diff two specific outputs")
         print("")
         print("Flags: --stat (default), --full, --ignore-timing")
         sys.exit(1)
 
     if not entry1 or not entry2:
         print("Error: Could not resolve both outputs to diff.")
-        print("Use /context-recent to see available outputs.")
+        print("Use /recent to see available outputs.")
         sys.exit(1)
 
     # Read file contents
@@ -364,7 +364,7 @@ def main():
             if len(diff) > max_lines:
                 print(f"")
                 print(f"... ({len(diff) - max_lines} more lines truncated)")
-                print(f"Use /context-open {entry1.get('id')} and /context-open {entry2.get('id')} to see full outputs")
+                print(f"Use /open {entry1.get('id')} and /open {entry2.get('id')} to see full outputs")
 
 if __name__ == '__main__':
     main()

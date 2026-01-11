@@ -9,9 +9,9 @@ Welcome tutorial that introduces FewWord concepts and common workflows.
 ## Usage
 
 ```bash
-/fewword-onboarding              # Full tutorial
-/fewword-onboarding --quick      # Quick start (essentials only)
-/fewword-onboarding --examples   # Show example workflows
+/onboarding              # Full tutorial
+/onboarding --quick      # Quick start (essentials only)
+/onboarding --examples   # Show example workflows
 ```
 
 ## Implementation
@@ -36,17 +36,17 @@ ESSENTIALS:
    $ pytest tests/
 
 2. See offloaded outputs:
-   /context-recent
+   /recent
 
 3. Retrieve when needed:
-   /context-open 1              # By number
-   /context-open A1B2           # By ID
-   /context-open pytest         # By command name
-   /context-open --last-fail    # Last failure
+   /open 1              # By number
+   /open A1B2           # By ID
+   /open pytest         # By command name
+   /open --last-fail    # Last failure
 
 That's it! FewWord works automatically in the background.
 
-More: /fewword-help | /fewword-stats | /fewword-onboarding
+More: /help | /stats | /onboarding
 QUICK
   exit 0
 fi
@@ -63,56 +63,56 @@ if [[ "$args" == *"--examples"* ]]; then
 $ pytest tests/
 
 # See the pointer
-[fw A1B2] pytest e=1 45K 882L | /context-open A1B2
+[fw A1B2] pytest e=1 45K 882L | /open A1B2
 
 # Get just the errors
-/context-open A1B2 --grep "FAILED\|Error"
+/open A1B2 --grep "FAILED\|Error"
 
 # Compare with last passing run
-/context-diff pytest
+/diff pytest
 
 ─── Tracking Important Outputs ───
 
 # Pin output to prevent cleanup
-/context-pin A1B2
+/pin A1B2
 
 # Add tags for organization
-/context-tag A1B2 prod-bug hotfix
+/tag A1B2 prod-bug hotfix
 
 # Add notes for context
-/context-note A1B2 "Root cause: race condition in auth"
+/note A1B2 "Root cause: race condition in auth"
 
 # Find tagged outputs later
-/context-recent --tag prod-bug
+/recent --tag prod-bug
 
 ─── Searching History ───
 
 # Search across all outputs
-/context-search "connection refused"
+/search "connection refused"
 
 # Search specific command outputs
-/context-search "AssertionError" --cmd pytest
+/search "AssertionError" --cmd pytest
 
 # Find outputs from last 24h
-/context-search "error" --since 24h
+/search "error" --since 24h
 
 ─── Session Analysis ───
 
 # See token savings
-/fewword-stats
+/stats
 
 # Visual timeline
-/context-timeline
+/timeline
 
 # Check system health
-/fewword-doctor
+/doctor
 
 ─── Quick Access Shortcuts ───
 
-/context-open --last              # Most recent output
-/context-open --last pytest       # Most recent pytest
-/context-open --last-fail         # Most recent failure
-/context-open --nth 2 pytest      # 2nd most recent pytest
+/open --last              # Most recent output
+/open --last pytest       # Most recent pytest
+/open --last-fail         # Most recent failure
+/open --nth 2 pytest      # 2nd most recent pytest
 EXAMPLES
   exit 0
 fi
@@ -157,7 +157,7 @@ FewWord automatically intercepts command output and:
 
 Instead of 500+ tokens of pytest output, you see ~35 tokens:
 
-  [fw A1B2] pytest e=1 45K 882L | /context-open A1B2
+  [fw A1B2] pytest e=1 45K 882L | /open A1B2
 
 ══════════════════════════════════════════════════════════════════
   BASIC USAGE
@@ -171,7 +171,7 @@ Instead of 500+ tokens of pytest output, you see ~35 tokens:
    $ cargo build
 
 2. SEE WHAT'S SAVED
-   /context-recent
+   /recent
 
    Shows numbered list of recent outputs:
     # │ ID       │ Cmd    │ Exit │ Size │ Age
@@ -180,10 +180,10 @@ Instead of 500+ tokens of pytest output, you see ~35 tokens:
     2 │ C3D4E5F6 │ npm    │ 0    │ 12K  │ 5m
 
 3. RETRIEVE WHEN NEEDED
-   /context-open 1          # By number from list
-   /context-open A1B2       # By hex ID
-   /context-open pytest     # By command name (latest)
-   /context-open --last     # Most recent (any command)
+   /open 1          # By number from list
+   /open A1B2       # By hex ID
+   /open pytest     # By command name (latest)
+   /open --last     # Most recent (any command)
 
 ══════════════════════════════════════════════════════════════════
   KEY COMMANDS
@@ -191,40 +191,40 @@ Instead of 500+ tokens of pytest output, you see ~35 tokens:
 
   RETRIEVAL
   ─────────
-  /context-open <selector>     Open output by ID/number/cmd
-  /context-open --last-fail    Last failed output
-  /context-open ID --grep X    Search within output
+  /open <selector>     Open output by ID/number/cmd
+  /open --last-fail    Last failed output
+  /open ID --grep X    Search within output
 
   DISCOVERY
   ─────────
-  /context-recent              List recent outputs
-  /context-search "pattern"    Search across all outputs
-  /context-timeline            Visual session history
+  /recent              List recent outputs
+  /search "pattern"    Search across all outputs
+  /timeline            Visual session history
 
   ORGANIZATION
   ────────────
-  /context-pin <ID>            Pin to prevent cleanup
-  /context-tag <ID> <tag>      Add tags for organization
-  /context-note <ID> "note"    Add notes for context
+  /pin <ID>            Pin to prevent cleanup
+  /tag <ID> <tag>      Add tags for organization
+  /note <ID> "note"    Add notes for context
 
   ANALYSIS
   ────────
-  /context-diff pytest         Diff last 2 runs
-  /context-correlate <ID>      Find related failures
-  /fewword-stats               Token savings stats
+  /diff pytest         Diff last 2 runs
+  /correlate <ID>      Find related failures
+  /stats               Token savings stats
 
   SYSTEM
   ──────
-  /fewword-help                Full command reference
-  /fewword-config              Show current config
-  /fewword-doctor              System health check
+  /help                Full command reference
+  /config              Show current config
+  /doctor              System health check
 
 ══════════════════════════════════════════════════════════════════
   PRO TIPS
 ══════════════════════════════════════════════════════════════════
 
   • Outputs auto-cleanup: 24h for success, 48h for failures
-  • Use /context-pin for important outputs you want to keep
+  • Use /pin for important outputs you want to keep
   • Secrets are automatically redacted before saving
   • Configure per-project with .fewwordrc.toml
 
@@ -233,12 +233,12 @@ Instead of 500+ tokens of pytest output, you see ~35 tokens:
 ══════════════════════════════════════════════════════════════════
 
   1. Run a command and see FewWord in action
-  2. Try /context-recent to see saved outputs
-  3. Use /context-open to retrieve when needed
+  2. Try /recent to see saved outputs
+  3. Use /open to retrieve when needed
 
-  Quick reference: /fewword-help
-  See examples: /fewword-onboarding --examples
-  Check health: /fewword-doctor
+  Quick reference: /help
+  See examples: /onboarding --examples
+  Check health: /doctor
 
 Happy coding!
 TUTORIAL
@@ -246,7 +246,7 @@ TUTORIAL
 
 ## Notes
 
-- First-time users are auto-prompted to run `/fewword-onboarding --quick`
+- First-time users are auto-prompted to run `/onboarding --quick`
 - `--examples` shows practical workflow recipes
 - Full tutorial is comprehensive but readable (~80 lines)
 - ASCII art banner makes screenshots shareable

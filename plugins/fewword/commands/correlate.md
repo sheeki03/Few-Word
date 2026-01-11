@@ -13,9 +13,9 @@ Find related failures through pattern matching. Computed on-demand, never stored
 ## Usage
 
 ```bash
-/context-correlate A1B2           # Show related failures for specific output
-/context-correlate pytest         # Show related failures for latest pytest
-/context-correlate --cluster      # Group recent failures by similarity
+/correlate A1B2           # Show related failures for specific output
+/correlate pytest         # Show related failures for latest pytest
+/correlate --cluster      # Group recent failures by similarity
 ```
 
 ## Implementation
@@ -359,8 +359,8 @@ def main():
     # Single output correlation mode
     if not args or args[0].startswith('--'):
         print("Usage:")
-        print("  /context-correlate <selector>  # Find related failures")
-        print("  /context-correlate --cluster   # Group failures by similarity")
+        print("  /correlate <selector>  # Find related failures")
+        print("  /correlate --cluster   # Group failures by similarity")
         sys.exit(1)
 
     selector = args[0]
@@ -368,7 +368,7 @@ def main():
 
     if not entry:
         print(f"Error: Could not resolve '{selector}' to an output.")
-        print("Use /context-recent to see available outputs.")
+        print("Use /recent to see available outputs.")
         sys.exit(1)
 
     if entry.get('exit_code', 0) == 0:
@@ -404,7 +404,7 @@ def main():
         print(f"    └─ {m_reason}")
         print("")
 
-    print(f"Tip: /context-diff {entry_id} {matches[0]['entry'].get('id', '')[:8]}")
+    print(f"Tip: /diff {entry_id} {matches[0]['entry'].get('id', '')[:8]}")
 
 if __name__ == '__main__':
     main()
@@ -423,7 +423,7 @@ Related failures for [A1B2C3D4] pytest
   [E5F6G7H8] pytest (1d ago) - 60% match
     └─ same test: test_auth.py
 
-Tip: /context-diff A1B2 C3D4
+Tip: /diff A1B2 C3D4
 ```
 
 ### Cluster mode
@@ -448,4 +448,4 @@ Cluster 2: 2 similar failures
 - Signals used: error types, test files, normalized tail hash
 - Threshold: 30% similarity required to show as match
 - Limited to last 50 failures to prevent full history scan
-- Use `/context-diff` to compare correlated failures
+- Use `/diff` to compare correlated failures

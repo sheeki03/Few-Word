@@ -20,20 +20,20 @@ Manually offload large content (subagent outputs, pasted text, etc.) to FewWord 
 
 ```bash
 # Pipe content from stdin
-echo "Large output here..." | /context-save "Explore results"
+echo "Large output here..." | /save "Explore results"
 
 # From a file
-/context-save "Build log" --file /tmp/build.log
+/save "Build log" --file /tmp/build.log
 
 # With source hint
-/context-save "API response" --source subagent --file response.json
+/save "API response" --source subagent --file response.json
 ```
 
 ## Output
 
 Returns a compact pointer:
 ```
-[fw a1b2c3d4] Explore results 15.2KB 210L | /context-open a1b2c3d4
+[fw a1b2c3d4] Explore results 15.2KB 210L | /open a1b2c3d4
 ```
 
 ## Implementation

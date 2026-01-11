@@ -13,11 +13,11 @@ Display a visual timeline of command outputs for the current session.
 ## Usage
 
 ```bash
-/context-timeline                 # Current session
-/context-timeline --last 2h       # Last 2 hours
-/context-timeline --last 30m      # Last 30 minutes
-/context-timeline --cmd pytest    # Filter by command
-/context-timeline --failures      # Only show failures
+/timeline                 # Current session
+/timeline --last 2h       # Last 2 hours
+/timeline --last 30m      # Last 30 minutes
+/timeline --cmd pytest    # Filter by command
+/timeline --failures      # Only show failures
 ```
 
 ## Implementation
@@ -285,7 +285,7 @@ def main():
                 if exits[i] != 0 and exits[i+1] == 0:
                     fail_id = history[i].get('id', '?')[:8]
                     pass_id = history[i+1].get('id', '?')[:8]
-                    suggestions.append(f"/context-diff {fail_id} {pass_id}")
+                    suggestions.append(f"/diff {fail_id} {pass_id}")
                     break
 
     if suggestions:
@@ -311,7 +311,7 @@ Legend: ✓ = exit 0, ✗ = exit != 0
 Total: 6 outputs, 2 failures
 Failures: pytest(2)
 
-Tip: /context-diff E5F6 I9J0  (compare failing → passing)
+Tip: /diff E5F6 I9J0  (compare failing → passing)
 ```
 
 ## Notes

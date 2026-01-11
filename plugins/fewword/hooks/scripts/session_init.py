@@ -3,7 +3,7 @@
 SessionStart hook: Initialize session ID for FewWord.
 
 Generates a unique session_id and writes it to .fewword/index/session.json.
-This enables per-session stats in /fewword-stats.
+This enables per-session stats in /stats.
 
 Runs on SessionStart before other hooks.
 """

@@ -84,7 +84,7 @@ def get_effective_config(cwd: str) -> Dict:
             'preview_lines': _safe_int('FEWWORD_PREVIEW_LINES', 5),
         },
         'pointer': {
-            'open_cmd': os.environ.get('FEWWORD_OPEN_CMD', '/context-open'),
+            'open_cmd': os.environ.get('FEWWORD_OPEN_CMD', '/open'),
             'show_path': os.environ.get('FEWWORD_SHOW_PATH', '0') == '1',
             'verbose': os.environ.get('FEWWORD_VERBOSE_POINTER', '0') == '1',
             'peek_on_pointer': os.environ.get('FEWWORD_PEEK_ON_POINTER', '0') == '1',
@@ -112,7 +112,7 @@ INLINE_MAX = _safe_int('FEWWORD_INLINE_MAX', 512)
 PREVIEW_MIN = _safe_int('FEWWORD_PREVIEW_MIN', 4096)
 PREVIEW_LINES = _safe_int('FEWWORD_PREVIEW_LINES', 5)
 PREVIEW_LINE_MAX = 200
-OPEN_CMD = os.environ.get('FEWWORD_OPEN_CMD', '/context-open')
+OPEN_CMD = os.environ.get('FEWWORD_OPEN_CMD', '/open')
 SHOW_PATH = os.environ.get('FEWWORD_SHOW_PATH', '0') == '1'
 VERBOSE_POINTER = os.environ.get('FEWWORD_VERBOSE_POINTER', '0') == '1'
 PEEK_ON_POINTER = os.environ.get('FEWWORD_PEEK_ON_POINTER', '0') == '1'
