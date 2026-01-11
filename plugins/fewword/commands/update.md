@@ -8,9 +8,9 @@ Update the FewWord plugin to the latest version from GitHub.
 
 ## Steps
 
-1. Run the plugin update command:
+1. Clear the marketplace cache and reinstall to ensure latest version:
    ```bash
-   claude plugin update fewword@sheeki03-Few-Word
+   rm -rf ~/.claude/plugins/marketplaces/sheeki03-Few-Word && claude plugin uninstall fewword@sheeki03-Few-Word 2>/dev/null; claude plugin install fewword@sheeki03-Few-Word
    ```
 
 2. Inform the user:
@@ -20,6 +20,7 @@ Update the FewWord plugin to the latest version from GitHub.
 
 ## Notes
 
-- This command runs `claude plugin update fewword@sheeki03-Few-Word`
+- This command clears the cached marketplace data and reinstalls fresh from GitHub
+- The standard `claude plugin update` command may show "already at latest" due to stale cache
 - After updating, start a new session for hooks to reload
-- Check current version with `/version`
+- Check current version with `/fewword:version`
