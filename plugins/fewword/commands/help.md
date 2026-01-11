@@ -24,7 +24,7 @@ FewWord is a context engineering plugin for Claude Code that automatically offlo
 
 **No configuration needed.** The plugin hooks into Claude Code's PreToolUse event and intercepts Bash commands automatically.
 
-## How It Works (v1.3.4 Tiered Offloading)
+## How It Works (v1.3.5 Tiered Offloading)
 
 | Output Size | What Happens |
 |-------------|--------------|
@@ -45,7 +45,7 @@ FAILED test_api.py::test_endpoint - TimeoutError
 2 failed, 48 passed in 12.34s
 ```
 
-## Available Commands (v1.3.4)
+## Available Commands (v1.3.5)
 
 ### Retrieval Commands
 
@@ -212,7 +212,7 @@ FewWord uses intelligent cleanup based on command exit codes:
 - **LATEST aliases**: Always point to most recent output
 - **Pinned outputs**: Never auto-deleted
 
-## Security Features (v1.3.4)
+## Security Features (v1.3.5)
 
 ### Secret Redaction (ON by default)
 
@@ -234,7 +234,7 @@ cmds = ["vault", "1password", "aws"]
 patterns = ["--password", "--token"]
 ```
 
-## Auto-Pin Rules (v1.3.4)
+## Auto-Pin Rules (v1.3.5)
 
 Automatically pin outputs based on rules:
 ```toml
@@ -246,7 +246,7 @@ size_min = 102400             # Pin outputs > 100KB
 max_files = 50                # Cap total auto-pinned
 ```
 
-## Configuration (v1.3.4)
+## Configuration (v1.3.5)
 
 ### Config Files
 

@@ -264,7 +264,7 @@ The plugin conservatively skips these commands:
 
 ## Configuration
 
-### Defaults (v1.3.4)
+### Defaults (v1.3.5)
 
 | Setting | Value |
 |---------|-------|
@@ -300,7 +300,7 @@ FEWWORD_SCRATCH_MAX_MB=250          # LRU cap
 
 ## Privacy & Security
 
-### Security Hardening (v1.3.4)
+### Security Hardening (v1.3.5)
 
 | Protection | What It Does |
 |------------|--------------|

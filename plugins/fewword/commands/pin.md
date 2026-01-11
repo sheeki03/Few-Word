@@ -72,19 +72,36 @@ Pin an offloaded output to permanent storage. Pinned files are never auto-delete
      "$id" "$now" "$dest" >> "$manifest"
    ```
 
-6. Update LATEST alias if it pointed to this file:
+6. Update LATEST alias if it pointed to this file (cross-platform):
    ```bash
-   # Check if any LATEST symlink points to the moved file
-   for latest in .fewword/scratch/tool_outputs/LATEST*.txt; do
-     if [ -L "$latest" ]; then
-       target=$(readlink "$latest")
-       if [ "$(basename "$target")" = "$filename" ]; then
-         # Update symlink to new location
-         ln -sf "$(cd .fewword/memory/pinned && pwd)/$filename" "$latest"
-         echo "Updated LATEST alias: $(basename "$latest")"
-       fi
-     fi
-   done 2>/dev/null
+   # Update any LATEST alias that points to the moved file
+   # Works with both symlinks (Unix) and pointer files (Windows fallback)
+   python3 -c "
+from pathlib import Path
+import os
+
+filename = '$filename'
+pinned_path = Path('.fewword/memory/pinned') / filename
+pinned_abs = str(pinned_path.resolve())
+
+for latest in Path('.fewword/scratch/tool_outputs').glob('LATEST*.txt'):
+    try:
+        # Check if it's a symlink
+        if latest.is_symlink():
+            target = os.readlink(latest)
+            if Path(target).name == filename:
+                latest.unlink()
+                latest.symlink_to(pinned_abs)
+                print(f'Updated LATEST alias: {latest.name}')
+        # Check if it's a pointer file (Windows fallback)
+        elif latest.is_file():
+            content = latest.read_text().strip()
+            if Path(content).name == filename:
+                latest.write_text(pinned_abs)
+                print(f'Updated LATEST alias: {latest.name}')
+    except (OSError, IOError):
+        pass
+" 2>/dev/null
    ```
 
 7. Confirm:

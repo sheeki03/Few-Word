@@ -8,18 +8,53 @@ Analyze and clean FewWord storage.
 
 ## Steps
 
-1. Show current storage usage:
+1. Show current storage usage (cross-platform):
    ```bash
-   echo "=== FewWord Storage Stats ==="
-   du -sh .fewword/scratch/ .fewword/memory/ .fewword/index/ 2>/dev/null || echo "No .fewword/ directory found"
-   echo ""
-   echo "=== Scratch Breakdown ==="
-   du -sh .fewword/scratch/*/ 2>/dev/null || echo "Empty"
-   echo ""
-   echo "=== File Counts ==="
-   find .fewword/scratch -type f 2>/dev/null | wc -l | xargs echo "Scratch files:"
-   find .fewword/memory -type f 2>/dev/null | wc -l | xargs echo "Memory files:"
-   find .fewword/index -type f 2>/dev/null | wc -l | xargs echo "Index files:"
+   # Cross-platform stats using Python (works on Windows, macOS, Linux)
+   python3 -c "
+from pathlib import Path
+
+def dir_size(p):
+    if not p.exists():
+        return 0
+    return sum(f.stat().st_size for f in p.rglob('*') if f.is_file())
+
+def fmt_size(b):
+    if b >= 1048576: return f'{b // 1048576}M'
+    if b >= 1024: return f'{b // 1024}K'
+    return f'{b}B'
+
+def count_files(p):
+    if not p.exists(): return 0
+    return sum(1 for f in p.rglob('*') if f.is_file())
+
+print('=== FewWord Storage Stats ===')
+for name in ['scratch', 'memory', 'index']:
+    p = Path('.fewword') / name
+    if p.exists():
+        print(f'{fmt_size(dir_size(p))}\t.fewword/{name}/')
+    else:
+        print(f'0B\t.fewword/{name}/ (not found)')
+
+print()
+print('=== Scratch Breakdown ===')
+scratch = Path('.fewword/scratch')
+if scratch.exists():
+    subdirs = [d for d in scratch.iterdir() if d.is_dir()]
+    if subdirs:
+        for d in subdirs:
+            print(f'{fmt_size(dir_size(d))}\t{d}/')
+    else:
+        print('Empty')
+else:
+    print('Empty')
+
+print()
+print('=== File Counts ===')
+print(f'Scratch files: {count_files(Path(\".fewword/scratch\"))}')
+print(f'Memory files: {count_files(Path(\".fewword/memory\"))}')
+print(f'Index files: {count_files(Path(\".fewword/index\"))}')
+" 2>/dev/null || echo "No .fewword/ directory found"
    ```
 
 2. Ask user what to clean:
@@ -29,8 +64,19 @@ Analyze and clean FewWord storage.
    - **Nothing**: Just show stats
 
 3. Execute cleanup based on choice:
-   - All scratch: `rm -rf .fewword/scratch/*`
-   - Old files: `find .fewword/scratch -type f -mmin +60 -delete`
+   - All scratch: `rm -rf .fewword/scratch/*` (or on Windows: `rmdir /s /q .fewword\scratch`)
+   - Old files (cross-platform Python):
+     ```bash
+     python3 -c "
+import time
+from pathlib import Path
+cutoff = time.time() - 3600  # 1 hour ago
+for f in Path('.fewword/scratch').rglob('*'):
+    if f.is_file() and f.stat().st_mtime < cutoff:
+        f.unlink()
+        print(f'Deleted: {f}')
+"
+     ```
    - Tool outputs: `rm -rf .fewword/scratch/tool_outputs/*`
 
 4. Show results after cleanup

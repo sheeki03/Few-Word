@@ -10,7 +10,7 @@
       "name": "fewword",
       "source": "./plugins/fewword",
       "description": "Tiered offloading with ultra-compact pointers (~35 tokens). Smart retention + session stats.",
-      "version": "1.3.3",
+      "version": "1.3.5",
       "author": {
         "name": "Sheeki"
       }

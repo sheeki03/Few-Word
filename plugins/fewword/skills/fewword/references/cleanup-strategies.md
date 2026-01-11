@@ -2,6 +2,8 @@
 
 Managing scratch file lifecycle to prevent unbounded growth.
 
+> **Windows Note**: The `find` and `du` commands shown below are Unix/Linux commands. On Windows, use Python equivalents or Git Bash. The `/cleanup` command uses cross-platform Python internally.
+
 ## Automatic Cleanup Rules
 
 ### By Age

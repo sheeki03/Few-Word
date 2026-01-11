@@ -2,6 +2,33 @@
 
 All notable changes to FewWord will be documented in this file.
 
+## [1.3.5] - 2026-01-11
+
+### Windows Compatibility
+- **Full Windows support**: All hooks and commands now work on Windows, macOS, and Linux
+- **New Python scripts**: Created cross-platform replacements for bash-only commands
+
+### Hook Scripts Fixed
+| Script | Issue | Fix |
+|--------|-------|-----|
+| `hooks/hooks.json` (Stop) | Used `du -sm`, `cut` | Created `stop_hook.py` using Python pathlib |
+| `hooks/hooks.json` (SessionStart) | Used bash brace expansion | Created `session_setup.py` using Python pathlib |
+| `hooks/scripts/offload_bash.py` | `ln -sf` fails on Windows | Added fallback for Windows symlink limitations |
+
+### Command Files Fixed
+| Command | Issue | Fix |
+|---------|-------|-----|
+| `commands/recent.md` | `find`, `wc -l`, `du -sh` | Replaced with inline Python using `pathlib.glob()` |
+| `commands/cleanup.md` | `find`, `wc -l`, `du -sh` | Replaced with inline Python |
+| `commands/pin.md` | `readlink`, `ln -sf` | Replaced with Python using `os.readlink()` + fallback |
+
+### New Scripts
+- `hooks/scripts/stop_hook.py` - Cross-platform scratch size check
+- `hooks/scripts/session_setup.py` - Cross-platform directory creation and .gitignore update
+
+### Documentation
+- Added Windows compatibility notes to `references/cleanup-strategies.md`
+
 ## [1.3.4] - 2026-01-10
 
 ### New Features

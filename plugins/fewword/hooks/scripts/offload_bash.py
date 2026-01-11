@@ -5,7 +5,7 @@ PreToolUse hook: Rewrite Bash commands to offload outputs to filesystem.
 Input (stdin): JSON with tool_name, tool_input, cwd, session_id
 Output (stdout): JSON with hookSpecificOutput containing updatedInput
 
-v1.3.4 features:
+v1.3.5 features:
 - Tiered offloading: inline (<512B), compact pointer (512B-4KB), preview (>4KB)
 - Ultra-compact pointer with summary (~40 tokens)
 - Smart preview: only for failures (exit != 0)
@@ -248,7 +248,7 @@ def generate_wrapper(original_cmd: str, output_dir: str, safe_cmd: str,
     """
     Generate bash wrapper that implements tiered offloading.
 
-    v1.3.4: Tiered logic + compact pointer + smart preview + session tracking + security hardening
+    v1.3.5: Tiered logic + compact pointer + smart preview + session tracking + security hardening
             + cmd_token/cmd_group + denied mode
 
     Tiers:
@@ -414,7 +414,7 @@ else
   echo "  Latest: cat $__fw_dir/LATEST_$__fw_cmd.txt"
   echo "  Grep: grep 'pattern' $__fw_out"
 
-  # Write manifest entry (append-only) with cmd_token and cmd_group (v1.3.4)
+  # Write manifest entry (append-only) with cmd_token and cmd_group (v1.3.5)
   # Use JSON escape helper for values that could contain special characters
   __fw_now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   __fw_esc_cmd=$(__fw_json_escape "$__fw_cmd")
@@ -425,10 +425,10 @@ else
     "$__fw_id" "$__fw_session" "$__fw_now" "$__fw_esc_cmd" "$__fw_esc_cmd_token" "$__fw_esc_cmd_group" "$__fw_exit" "$__fw_bytes" "$__fw_lines" "$__fw_esc_path" \\
     >> "$__fw_manifest" 2>/dev/null
 
-  # Create LATEST symlinks (absolute paths)
+  # Create LATEST symlinks (absolute paths) - with Windows fallback
   __fw_abs_out="$(cd "$(dirname "$__fw_out")" && pwd)/$(basename "$__fw_out")"
-  ln -sf "$__fw_abs_out" "$__fw_dir/LATEST.txt" 2>/dev/null
-  ln -sf "$__fw_abs_out" "$__fw_dir/LATEST_$__fw_cmd.txt" 2>/dev/null
+  ln -sf "$__fw_abs_out" "$__fw_dir/LATEST.txt" 2>/dev/null || echo "$__fw_abs_out" > "$__fw_dir/LATEST.txt"
+  ln -sf "$__fw_abs_out" "$__fw_dir/LATEST_$__fw_cmd.txt" 2>/dev/null || echo "$__fw_abs_out" > "$__fw_dir/LATEST_$__fw_cmd.txt"
 fi
 '''
     else:
@@ -455,7 +455,7 @@ elif [ "${{__fw_bytes:-0}}" -lt {PREVIEW_MIN} ]; then
 '''
 
         wrapper += f'''
-  # Write manifest entry (append-only) with cmd_token and cmd_group (v1.3.4)
+  # Write manifest entry (append-only) with cmd_token and cmd_group (v1.3.5)
   # Use JSON escape helper for values that could contain special characters
   __fw_now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   __fw_esc_cmd=$(__fw_json_escape "$__fw_cmd")
@@ -466,10 +466,10 @@ elif [ "${{__fw_bytes:-0}}" -lt {PREVIEW_MIN} ]; then
     "$__fw_id" "$__fw_session" "$__fw_now" "$__fw_esc_cmd" "$__fw_esc_cmd_token" "$__fw_esc_cmd_group" "$__fw_exit" "$__fw_bytes" "$__fw_lines" "$__fw_esc_path" \\
     >> "$__fw_manifest" 2>/dev/null
 
-  # Create LATEST symlinks (absolute paths)
+  # Create LATEST symlinks (absolute paths) - with Windows fallback
   __fw_abs_out="$(cd "$(dirname "$__fw_out")" && pwd)/$(basename "$__fw_out")"
-  ln -sf "$__fw_abs_out" "$__fw_dir/LATEST.txt" 2>/dev/null
-  ln -sf "$__fw_abs_out" "$__fw_dir/LATEST_$__fw_cmd.txt" 2>/dev/null
+  ln -sf "$__fw_abs_out" "$__fw_dir/LATEST.txt" 2>/dev/null || echo "$__fw_abs_out" > "$__fw_dir/LATEST.txt"
+  ln -sf "$__fw_abs_out" "$__fw_dir/LATEST_$__fw_cmd.txt" 2>/dev/null || echo "$__fw_abs_out" > "$__fw_dir/LATEST_$__fw_cmd.txt"
 else
   # TIER 3 - PREVIEW: pointer + smart preview (failures only)
   echo "$__fw_pointer"
@@ -480,7 +480,7 @@ else
     tail -{PEEK_TIER3_LINES if PEEK_ON_POINTER else PREVIEW_LINES} "$__fw_out" | cut -c1-{PREVIEW_LINE_MAX}
   fi
 
-  # Write manifest entry (append-only) with cmd_token and cmd_group (v1.3.4)
+  # Write manifest entry (append-only) with cmd_token and cmd_group (v1.3.5)
   # Use JSON escape helper for values that could contain special characters
   __fw_now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   __fw_esc_cmd=$(__fw_json_escape "$__fw_cmd")
@@ -491,10 +491,10 @@ else
     "$__fw_id" "$__fw_session" "$__fw_now" "$__fw_esc_cmd" "$__fw_esc_cmd_token" "$__fw_esc_cmd_group" "$__fw_exit" "$__fw_bytes" "$__fw_lines" "$__fw_esc_path" \\
     >> "$__fw_manifest" 2>/dev/null
 
-  # Create LATEST symlinks (absolute paths)
+  # Create LATEST symlinks (absolute paths) - with Windows fallback
   __fw_abs_out="$(cd "$(dirname "$__fw_out")" && pwd)/$(basename "$__fw_out")"
-  ln -sf "$__fw_abs_out" "$__fw_dir/LATEST.txt" 2>/dev/null
-  ln -sf "$__fw_abs_out" "$__fw_dir/LATEST_$__fw_cmd.txt" 2>/dev/null
+  ln -sf "$__fw_abs_out" "$__fw_dir/LATEST.txt" 2>/dev/null || echo "$__fw_abs_out" > "$__fw_dir/LATEST.txt"
+  ln -sf "$__fw_abs_out" "$__fw_dir/LATEST_$__fw_cmd.txt" 2>/dev/null || echo "$__fw_abs_out" > "$__fw_dir/LATEST_$__fw_cmd.txt"
 fi
 '''
 
@@ -552,7 +552,7 @@ def main():
     safe_cmd = re.sub(r'[^a-zA-Z0-9_-]', '_', first_cmd)[:20]
     output_dir = f"{cwd}/.fewword/scratch/tool_outputs"
 
-    # Extract cmd_token and cmd_group (v1.3.4)
+    # Extract cmd_token and cmd_group (v1.3.5)
     if HAS_SUMMARY:
         cmd_token = get_cmd_token(command)
         cmd_group = resolve_cmd_group(cmd_token, config.get('aliases', {}))

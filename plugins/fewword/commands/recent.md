@@ -98,13 +98,29 @@ Use: /open 1  or  /open pytest  or  /open A1B2
    echo "Use: /open 1  or  /open pytest  or  /open A1B2"
    ```
 
-3. Show summary stats:
+3. Show summary stats (cross-platform):
    ```bash
    echo ""
    echo "────────────────────────"
-   count=$(find .fewword/scratch/tool_outputs -maxdepth 1 -type f -name "*_exit*.txt" 2>/dev/null | wc -l | tr -d ' ')
-   size=$(du -sh .fewword/scratch/tool_outputs 2>/dev/null | cut -f1 || echo "0")
-   echo "Total: $count files, $size"
+   # Cross-platform stats using Python (works on Windows, macOS, Linux)
+   python3 -c "
+import os
+from pathlib import Path
+d = Path('.fewword/scratch/tool_outputs')
+if d.exists():
+    files = list(d.glob('*_exit*.txt'))
+    count = len(files)
+    total_bytes = sum(f.stat().st_size for f in files if f.is_file())
+    if total_bytes >= 1048576:
+        size = f'{total_bytes // 1048576}M'
+    elif total_bytes >= 1024:
+        size = f'{total_bytes // 1024}K'
+    else:
+        size = f'{total_bytes}B'
+    print(f'Total: {count} files, {size}')
+else:
+    print('Total: 0 files, 0B')
+" 2>/dev/null || echo "Total: ? files"
    ```
 
 ## Usage Examples
