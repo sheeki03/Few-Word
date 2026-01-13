@@ -20,6 +20,8 @@ Security notes:
 - Custom patterns supported via config
 """
 
+from __future__ import annotations
+
 import re
 from typing import List, Tuple, Optional
 

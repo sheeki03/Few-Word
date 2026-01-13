@@ -8,6 +8,8 @@ Uses simple regex patterns to find status lines for popular tools.
 Security note: Only extracts cmd_token (first token), NEVER full command line.
 """
 
+from __future__ import annotations
+
 import re
 from typing import Dict, Optional, Tuple
 

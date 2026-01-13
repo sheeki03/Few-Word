@@ -5,6 +5,7 @@ SessionStart hook: Check for plugin updates.
 Compares installed version with latest on GitHub and notifies user if outdated.
 Displays notification directly in terminal via /dev/tty on every session start.
 """
+from __future__ import annotations
 
 import os
 import json

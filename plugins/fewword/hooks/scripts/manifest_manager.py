@@ -21,6 +21,8 @@ Usage:
     python3 manifest_manager.py read-all [cwd] [limit]
 """
 
+from __future__ import annotations
+
 import gzip
 import json
 import os

@@ -10,6 +10,7 @@ If scratch is empty, prints nothing.
 
 This is "best-effort" - /recent is the primary recovery path.
 """
+from __future__ import annotations
 
 import os
 import json

@@ -5,6 +5,8 @@ SessionStart hook: Create FewWord directory structure and update .gitignore.
 Cross-platform: Works on Windows, macOS, and Linux.
 """
 
+from __future__ import annotations
+
 import os
 from pathlib import Path
 

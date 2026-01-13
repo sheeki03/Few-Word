@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Context Export - Export session history as markdown report."""
 
+from __future__ import annotations
+
 import json
 import os
 import re

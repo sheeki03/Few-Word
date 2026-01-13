@@ -13,6 +13,7 @@ Runs on:
 - SessionStart (via hooks.json)
 - After each offload (called from offload_bash.py)
 """
+from __future__ import annotations
 
 import os
 import re

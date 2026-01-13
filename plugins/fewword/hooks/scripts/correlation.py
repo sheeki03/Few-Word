@@ -12,6 +12,8 @@ Key design decisions:
 - Limit scan to recent failures (50) to prevent full history scan
 """
 
+from __future__ import annotations
+
 import json
 import os
 from pathlib import Path

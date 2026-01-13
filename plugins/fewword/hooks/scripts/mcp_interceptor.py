@@ -10,6 +10,8 @@ NOTE: Does NOT use permissionDecision: "ask" (VS Code extension ignores it).
 Write-like MCP operations are gated via PermissionRequest hook instead.
 """
 
+from __future__ import annotations
+
 import json
 import sys
 import os

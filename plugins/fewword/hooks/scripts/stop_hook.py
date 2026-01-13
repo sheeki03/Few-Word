@@ -5,6 +5,8 @@ Stop hook for FewWord - warns if scratch directory is too large.
 Cross-platform: Works on Windows, macOS, and Linux.
 """
 
+from __future__ import annotations
+
 import os
 from pathlib import Path
 

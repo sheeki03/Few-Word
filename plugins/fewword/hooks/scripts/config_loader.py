@@ -13,6 +13,8 @@ Within same tier: TOML checked before JSON (first found wins).
 Supports Python 3.11+ with tomllib (stdlib), falls back to JSON for older Python.
 """
 
+from __future__ import annotations
+
 import copy
 import json
 import os

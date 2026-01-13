@@ -9,6 +9,8 @@ Usage:
     python cleanup_scratch.py --dry-run          # Show what would be deleted
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 from datetime import datetime, timedelta

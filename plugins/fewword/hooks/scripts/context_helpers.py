@@ -8,6 +8,9 @@ Usage:
     python3 context_helpers.py resolve "pytest" ".fewword/index/tool_outputs.jsonl" ".fewword/index/.recent_index"
     python3 context_helpers.py resolve "A1B2C3D4" ".fewword/index/tool_outputs.jsonl" ".fewword/index/.recent_index"
 """
+
+from __future__ import annotations
+
 import sys
 import json
 from datetime import datetime, timezone

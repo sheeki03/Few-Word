@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Manual content offload to FewWord scratch."""
 
+from __future__ import annotations
+
 import json
 import os
 import re

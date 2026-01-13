@@ -6,6 +6,8 @@ Cross-platform replacement for the bash one-liner that had quoting issues.
 Fixes: GitHub Issue #16 - EOF error with nested quotes on some platforms.
 """
 
+from __future__ import annotations
+
 import os
 import shutil
 from pathlib import Path

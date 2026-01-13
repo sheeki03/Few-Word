@@ -18,6 +18,8 @@ Constraints:
 - max_files limit prevents runaway pinning
 """
 
+from __future__ import annotations
+
 import json
 import os
 import re

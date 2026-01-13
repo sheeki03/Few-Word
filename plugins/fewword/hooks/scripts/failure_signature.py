@@ -16,6 +16,8 @@ Security notes:
 - Hash is of structure, not content
 """
 
+from __future__ import annotations
+
 import re
 import hashlib
 from typing import Dict, List, Optional

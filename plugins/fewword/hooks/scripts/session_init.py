@@ -7,6 +7,7 @@ This enables per-session stats in /stats.
 
 Runs on SessionStart before other hooks.
 """
+from __future__ import annotations
 
 import os
 import json

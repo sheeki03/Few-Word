@@ -7,6 +7,8 @@ Usage:
     python offload_output.py --tool query --input results.json
 """
 
+from __future__ import annotations
+
 import argparse
 import sys
 import os
@@ -79,15 +81,15 @@ Use grep/sed/tail to retrieve specific content."""
 
 
 def main():
+    global TOKEN_THRESHOLD
+
     parser = argparse.ArgumentParser(description="Offload large tool outputs")
     parser.add_argument("--tool", required=True, help="Tool name for filename")
     parser.add_argument("--input", help="Input file (default: stdin)")
     parser.add_argument("--threshold", type=int, default=TOKEN_THRESHOLD,
                         help=f"Token threshold (default: {TOKEN_THRESHOLD})")
-    
+
     args = parser.parse_args()
-    
-    global TOKEN_THRESHOLD
     TOKEN_THRESHOLD = args.threshold
     
     # Read input

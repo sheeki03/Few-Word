@@ -23,6 +23,8 @@ Environment variables (see config_loader.py for full list):
 - FEWWORD_DISABLE: Disable all offloading (default: 0)
 """
 
+from __future__ import annotations
+
 import json
 import sys
 import os

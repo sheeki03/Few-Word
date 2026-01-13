@@ -23,6 +23,8 @@ Output format (VERIFIED against Claude Code docs):
 Note: There is NO "ask" option for PermissionRequest - only allow/deny.
 """
 
+from __future__ import annotations
+
 import json
 import sys
 import os
