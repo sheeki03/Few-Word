@@ -8,19 +8,39 @@ Update the FewWord plugin to the latest version from GitHub.
 
 ## Steps
 
-1. Clear the marketplace cache and reinstall to ensure latest version:
+1. Clear ALL caches and do a fresh install:
    ```bash
-   rm -rf ~/.claude/plugins/marketplaces/sheeki03-Few-Word && claude plugin uninstall fewword@sheeki03-Few-Word 2>/dev/null; claude plugin install fewword@sheeki03-Few-Word
+   # Remove all FewWord cache and marketplace data
+   rm -rf ~/.claude/plugins/cache/sheeki03-Few-Word 2>/dev/null
+   rm -rf ~/.claude/plugins/marketplaces/sheeki03-Few-Word 2>/dev/null
+   rm -rf ~/.claude/plugins/fewword@sheeki03-Few-Word 2>/dev/null
+
+   # Uninstall (ignore errors if not installed)
+   claude plugin uninstall fewword@sheeki03-Few-Word 2>/dev/null
+
+   # Fresh install from GitHub
+   claude plugin install fewword@sheeki03-Few-Word
    ```
 
-2. Inform the user:
+2. Verify the installed version:
+   ```bash
+   # Find and display installed version
+   version=$(find ~/.claude/plugins -path "*fewword*" -name "plugin.json" -exec grep -l "fewword" {} \; 2>/dev/null | head -1 | xargs grep '"version"' 2>/dev/null | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
+   if [ -n "$version" ]; then
+     echo "✓ FewWord v${version} installed successfully"
+   else
+     echo "✓ FewWord installed (restart session to verify version)"
+   fi
    ```
-   Update complete. Please restart your Claude Code session for changes to take effect.
+
+3. Inform the user:
+   ```
+   Update complete! Please restart your Claude Code session for the new version to take effect.
    ```
 
 ## Notes
 
-- This command clears the cached marketplace data and reinstalls fresh from GitHub
-- The standard `claude plugin update` command may show "already at latest" due to stale cache
-- After updating, start a new session for hooks to reload
-- Check current version with `/fewword:version`
+- This command removes ALL cached data and does a fresh install from GitHub
+- Always restart your session after updating for hooks to reload
+- Check current version anytime with `/fewword:version`
+- The standard `claude plugin update` command has caching issues - always use `/fewword:update` instead
