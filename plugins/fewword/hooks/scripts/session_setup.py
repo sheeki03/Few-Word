@@ -38,10 +38,10 @@ def main():
         if gitignore.exists():
             try:
                 content = gitignore.read_text()
-                # Check for .fewword entry (with or without trailing slash)
+                # Check for any .fewword entry (covers all variations)
                 for line in content.splitlines():
                     line = line.strip()
-                    if line in ('.fewword', '.fewword/', '.fewword/*'):
+                    if line.startswith('.fewword'):
                         needs_update = False
                         break
             except (OSError, IOError):
