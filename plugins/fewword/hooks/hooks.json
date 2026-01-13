@@ -53,7 +53,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'if [ -f .fewword/index/current_plan.yaml ] && grep -q \"status: completed\" .fewword/index/current_plan.yaml 2>/dev/null; then ts=$(date +%Y%m%d_%H%M%S); mv .fewword/index/current_plan.yaml \".fewword/memory/plans/archived_${ts}.yaml\" 2>/dev/null && echo \"[fewword] Archived completed plan\"; fi'"
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/archive_plan.py\""
           }
         ]
       }

@@ -1,6 +1,6 @@
 {
   "name": "fewword",
-  "version": "1.3.5",
+  "version": "1.3.6",
   "description": "Context engineering plugin - tiered offloading, smart summaries, secret redaction, TOML/JSON config, command aliases, MCP allowlists, and self-diagnostics.",
   "author": {
     "name": "Sheeki"

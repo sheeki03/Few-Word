@@ -48,10 +48,22 @@ LEGACY_PATTERN = re.compile(
     re.IGNORECASE
 )
 
+# Temp file pattern (orphaned from interrupted commands)
+# Matches: {cmd}_{YYYYMMDD_HHMMSS}_{8hex}_tmp.txt
+TEMP_PATTERN = re.compile(
+    r'^([a-zA-Z0-9_-]+)_(\d{8}_\d{6})_([0-9a-f]{8})_tmp\.txt$',
+    re.IGNORECASE
+)
+
 
 def is_alias_file(filename: str) -> bool:
     """Check if file is a LATEST alias (should never be deleted)."""
     return filename.startswith('LATEST')
+
+
+def is_temp_file(filename: str) -> bool:
+    """Check if file is an orphaned temp file from interrupted command."""
+    return bool(TEMP_PATTERN.match(filename))
 
 
 def is_offload_file(filename: str) -> tuple[bool, int | None]:
@@ -149,6 +161,7 @@ def cleanup_scratch(cwd: str = None, verbose: bool = False):
     """
     Main cleanup function.
 
+    0. Clean up orphaned temp files (fixes GitHub Issue #17)
     1. Find all offload files (not aliases)
     2. Apply TTL-based deletion
     3. Apply LRU eviction if over size cap
@@ -165,6 +178,26 @@ def cleanup_scratch(cwd: str = None, verbose: bool = False):
             print("[fewword] No scratch directory found")
         return
 
+    deleted_count = 0
+    deleted_bytes = 0
+
+    # Phase 0: Clean up orphaned temp files (from interrupted commands)
+    # These are left behind when process is killed before rename completes
+    for filepath in scratch_dir.iterdir():
+        if filepath.is_file() and is_temp_file(filepath.name):
+            try:
+                stat = filepath.stat()
+                # Only delete temp files older than 5 minutes (in case command is still running)
+                age_minutes = (time.time() - stat.st_mtime) / 60
+                if age_minutes > 5:
+                    filepath.unlink()
+                    deleted_count += 1
+                    deleted_bytes += stat.st_size
+                    if verbose:
+                        print(f"[fewword] Deleted (orphaned temp): {filepath.name}")
+            except OSError:
+                pass
+
     # Collect all offload files with their info
     files = []
     for filepath in scratch_dir.iterdir():
@@ -176,13 +209,14 @@ def cleanup_scratch(cwd: str = None, verbose: bool = False):
     if not files:
         if verbose:
             print("[fewword] No offload files found")
+        # Still report temp file cleanup if any occurred
+        if deleted_count > 0:
+            print(f"[fewword] Cleanup: deleted {deleted_count} files ({deleted_bytes / 1024:.1f}KB), "
+                  f"remaining 0 files (0.0MB)")
         return
 
     # Sort by mtime (newest first) for LRU
     files.sort(key=lambda x: x['mtime'], reverse=True)
-
-    deleted_count = 0
-    deleted_bytes = 0
 
     # Phase 1: TTL-based deletion
     for info in files:

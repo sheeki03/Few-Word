@@ -17,7 +17,7 @@ Retrieve offloaded output with a "peek" preview by default. Only dumps full cont
 /open 1                 # By number from /recent
 /open pytest            # Latest output from 'pytest' command
 
-# NEW: Shortcut flags (v1.3.5)
+# NEW: Shortcut flags (v1.3.6)
 /open --last            # Most recent output (any command)
 /open --last pytest     # Most recent pytest output
 /open --last-fail       # Most recent failed output (exit != 0)
@@ -66,7 +66,7 @@ Hint: --full | --head 50 | --tail 50 | --grep "pattern"
    grep_i=false
    selector=""
 
-   # NEW: Shortcut flags (v1.3.5)
+   # NEW: Shortcut flags (v1.3.6)
    use_last=false
    use_last_fail=false
    nth=1
