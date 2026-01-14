@@ -39,7 +39,7 @@ Returns a compact pointer:
 ## Implementation
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Wrapper to run context_save from hooks/scripts."""
 
 import os

@@ -19,7 +19,7 @@ Show comprehensive statistics about offloaded outputs, token savings, and retrie
 Run this Python script to display rich stats:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """FewWord Stats - Rich session statistics."""
 
 import json

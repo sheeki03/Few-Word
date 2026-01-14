@@ -34,7 +34,7 @@ Search across all offloaded outputs with manifest integration and hard caps to p
 Run this Python script to search:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Context Search - Search offloaded outputs with hard caps."""
 
 import json

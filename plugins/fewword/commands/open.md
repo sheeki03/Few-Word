@@ -177,7 +177,7 @@ Hint: --full | --head 50 | --tail 50 | --grep "pattern"
    # Handle shortcut flags first
    if [ "$use_last" = true ] || [ "$use_last_fail" = true ] || [ "$nth" -gt 1 ]; then
      # Build Python command to find Nth matching entry
-     id=$(python3 -c "
+     id=$(python -c "
 import json
 import sys
 
@@ -227,7 +227,7 @@ for entry in reversed(entries):
      fi
    else
      # Standard selector resolution
-     id=$(python3 "$helper" resolve "$selector" "$manifest" "$index_path" 2>/dev/null)
+     id=$(python "$helper" resolve "$selector" "$manifest" "$index_path" 2>/dev/null)
 
      if [ -z "$id" ]; then
        echo "Error: Could not resolve '$selector'"
@@ -246,7 +246,7 @@ for entry in reversed(entries):
 3. Lookup entry and file path:
    ```bash
    # Get full entry details
-   entry=$(python3 "$helper" lookup "$id" "$manifest" 2>/dev/null)
+   entry=$(python "$helper" lookup "$id" "$manifest" 2>/dev/null)
 
    if [ -z "$entry" ] || [ "$entry" = "{}" ]; then
      echo "Error: Entry not found for ID '$id'"
@@ -254,15 +254,15 @@ for entry in reversed(entries):
    fi
 
    # Extract fields
-   cmd=$(echo "$entry" | python3 -c "import sys,json; print(json.load(sys.stdin).get('cmd',''))")
-   exit_code=$(echo "$entry" | python3 -c "import sys,json; print(json.load(sys.stdin).get('exit_code',0))")
-   bytes=$(echo "$entry" | python3 -c "import sys,json; print(json.load(sys.stdin).get('bytes',0))")
-   lines=$(echo "$entry" | python3 -c "import sys,json; print(json.load(sys.stdin).get('lines',0))")
-   path=$(echo "$entry" | python3 -c "import sys,json; print(json.load(sys.stdin).get('path',''))")
-   created_at=$(echo "$entry" | python3 -c "import sys,json; print(json.load(sys.stdin).get('created_at',''))")
+   cmd=$(echo "$entry" | python -c "import sys,json; print(json.load(sys.stdin).get('cmd',''))")
+   exit_code=$(echo "$entry" | python -c "import sys,json; print(json.load(sys.stdin).get('exit_code',0))")
+   bytes=$(echo "$entry" | python -c "import sys,json; print(json.load(sys.stdin).get('bytes',0))")
+   lines=$(echo "$entry" | python -c "import sys,json; print(json.load(sys.stdin).get('lines',0))")
+   path=$(echo "$entry" | python -c "import sys,json; print(json.load(sys.stdin).get('path',''))")
+   created_at=$(echo "$entry" | python -c "import sys,json; print(json.load(sys.stdin).get('created_at',''))")
 
    # Calculate age
-   age=$(python3 "$helper" age "$created_at" 2>/dev/null || echo "?")
+   age=$(python "$helper" age "$created_at" 2>/dev/null || echo "?")
 
    # Format size
    if [ "$bytes" -ge 1048576 ]; then

@@ -23,7 +23,7 @@ Remove a pinned output, moving it back to scratch for normal TTL cleanup.
 Run this Python script to unpin:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Context Unpin - Remove pin from output."""
 
 import json

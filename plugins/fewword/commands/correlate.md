@@ -23,7 +23,7 @@ Find related failures through pattern matching. Computed on-demand, never stored
 Run this Python script to compute correlations:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Context Correlate - Find related failures on-demand."""
 
 import json

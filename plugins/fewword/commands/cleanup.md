@@ -11,7 +11,7 @@ Analyze and clean FewWord storage.
 1. Show current storage usage (cross-platform):
    ```bash
    # Cross-platform stats using Python (works on Windows, macOS, Linux)
-   python3 -c "
+   python -c "
 from pathlib import Path
 
 def dir_size(p):
@@ -67,7 +67,7 @@ print(f'Index files: {count_files(Path(\".fewword/index\"))}')
    - All scratch: `rm -rf .fewword/scratch/*` (or on Windows: `rmdir /s /q .fewword\scratch`)
    - Old files (cross-platform Python):
      ```bash
-     python3 -c "
+     python -c "
 import time
 from pathlib import Path
 cutoff = time.time() - 3600  # 1 hour ago

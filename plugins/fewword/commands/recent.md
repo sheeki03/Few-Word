@@ -75,7 +75,7 @@ Use: /open 1  or  /open pytest  or  /open A1B2
      fi
 
      # Calculate age using Python helper
-     age=$(python3 "$helper" age "$created_at" 2>/dev/null || echo "?")
+     age=$(python "$helper" age "$created_at" 2>/dev/null || echo "?")
 
      # Check if file still exists
      if [ -f "$path" ]; then
@@ -103,7 +103,7 @@ Use: /open 1  or  /open pytest  or  /open A1B2
    echo ""
    echo "────────────────────────"
    # Cross-platform stats using Python (works on Windows, macOS, Linux)
-   python3 -c "
+   python -c "
 import os
 from pathlib import Path
 d = Path('.fewword/scratch/tool_outputs')

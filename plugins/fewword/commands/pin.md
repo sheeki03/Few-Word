@@ -76,7 +76,7 @@ Pin an offloaded output to permanent storage. Pinned files are never auto-delete
    ```bash
    # Update any LATEST alias that points to the moved file
    # Works with both symlinks (Unix) and pointer files (Windows fallback)
-   python3 -c "
+   python -c "
 from pathlib import Path
 import os
 

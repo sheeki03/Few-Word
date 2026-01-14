@@ -27,7 +27,7 @@ Display the effective FewWord configuration and where each setting comes from.
 Run this Python script to display configuration:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """FewWord Config - Show effective configuration."""
 
 import json

@@ -32,7 +32,7 @@ Add tags to offloaded outputs for better organization and retrieval.
 Run this Python script to manage tags:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Context Tag - Add tags to outputs."""
 
 import json

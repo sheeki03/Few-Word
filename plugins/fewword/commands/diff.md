@@ -32,7 +32,7 @@ Output flags:
 Run this Python script to perform the diff:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Context Diff - Compare command outputs with noise stripping."""
 
 import json

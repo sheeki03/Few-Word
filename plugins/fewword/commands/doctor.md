@@ -21,7 +21,7 @@ Run a health check on FewWord installation and optionally fix common issues.
 Run this Python script to check FewWord health:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """FewWord Doctor - Self-diagnostics and repair."""
 
 import json

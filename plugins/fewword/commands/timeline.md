@@ -25,7 +25,7 @@ Display a visual timeline of command outputs for the current session.
 Run this Python script to display timeline:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Context Timeline - Visual session history."""
 
 import json

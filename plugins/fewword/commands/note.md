@@ -29,7 +29,7 @@ Add notes to offloaded outputs for documentation and context.
 Run this Python script to manage notes:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Context Note - Add notes to outputs."""
 
 import json

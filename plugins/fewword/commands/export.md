@@ -31,7 +31,7 @@ Returns a compact pointer to the exported report:
 ## Implementation
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Wrapper to run context_export from hooks/scripts."""
 
 import os
