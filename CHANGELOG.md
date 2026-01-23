@@ -2,6 +2,11 @@
 
 All notable changes to FewWord will be documented in this file.
 
+## [1.3.8] - 2026-01-23
+
+### Fixed
+- **Cross-platform Python**: Use `python3 ... || python ...` fallback pattern in hooks.json. Fixes "python not found" errors on macOS/Linux while maintaining Windows compatibility.
+
 ## [1.3.7] - 2026-01-23
 
 ### Fixed
