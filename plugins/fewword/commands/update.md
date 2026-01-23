@@ -8,32 +8,81 @@ Update the FewWord plugin to the latest version from GitHub.
 
 ## Steps
 
-1. Clear ALL caches and do a fresh install:
+1. Clear ALL caches and do a fresh install using Python (cross-platform):
    ```bash
-   # Remove all FewWord cache and marketplace data
-   rm -rf ~/.claude/plugins/cache/sheeki03-Few-Word 2>/dev/null
-   rm -rf ~/.claude/plugins/marketplaces/sheeki03-Few-Word 2>/dev/null
-   rm -rf ~/.claude/plugins/fewword@sheeki03-Few-Word 2>/dev/null
+   python3 -c "
+import shutil
+from pathlib import Path
+home = Path.home()
+cache_dirs = [
+    home / '.claude/plugins/cache/sheeki03-Few-Word',
+    home / '.claude/plugins/marketplaces/sheeki03-Few-Word',
+    home / '.claude/plugins/fewword@sheeki03-Few-Word'
+]
+for d in cache_dirs:
+    if d.exists():
+        shutil.rmtree(d, ignore_errors=True)
+        print(f'Removed: {d}')
+print('Cache cleared')
+" 2>/dev/null || python -c "
+import shutil
+from pathlib import Path
+home = Path.home()
+cache_dirs = [
+    home / '.claude/plugins/cache/sheeki03-Few-Word',
+    home / '.claude/plugins/marketplaces/sheeki03-Few-Word',
+    home / '.claude/plugins/fewword@sheeki03-Few-Word'
+]
+for d in cache_dirs:
+    if d.exists():
+        shutil.rmtree(d, ignore_errors=True)
+        print(f'Removed: {d}')
+print('Cache cleared')
+"
+   ```
 
-   # Uninstall (ignore errors if not installed)
+2. Uninstall and reinstall:
+   ```bash
    claude plugin uninstall fewword@sheeki03-Few-Word 2>/dev/null
-
-   # Fresh install from GitHub
    claude plugin install fewword@sheeki03-Few-Word
    ```
 
-2. Verify the installed version:
+3. Verify the installed version using Python (cross-platform):
    ```bash
-   # Find and display installed version
-   version=$(find ~/.claude/plugins -path "*fewword*" -name "plugin.json" -exec grep -l "fewword" {} \; 2>/dev/null | head -1 | xargs grep '"version"' 2>/dev/null | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
-   if [ -n "$version" ]; then
-     echo "✓ FewWord v${version} installed successfully"
-   else
-     echo "✓ FewWord installed (restart session to verify version)"
-   fi
+   python3 -c "
+import json
+from pathlib import Path
+home = Path.home()
+patterns = [
+    home / '.claude/plugins/marketplaces/sheeki03-Few-Word/plugins/fewword/.claude-plugin/plugin.json',
+    home / '.claude/plugins/fewword@sheeki03-Few-Word/plugins/fewword/.claude-plugin/plugin.json'
+]
+for p in patterns:
+    if p.exists():
+        data = json.loads(p.read_text())
+        print(f\"✓ FewWord v{data.get('version', 'unknown')} installed successfully\")
+        break
+else:
+    print('✓ FewWord installed (restart session to verify version)')
+" 2>/dev/null || python -c "
+import json
+from pathlib import Path
+home = Path.home()
+patterns = [
+    home / '.claude/plugins/marketplaces/sheeki03-Few-Word/plugins/fewword/.claude-plugin/plugin.json',
+    home / '.claude/plugins/fewword@sheeki03-Few-Word/plugins/fewword/.claude-plugin/plugin.json'
+]
+for p in patterns:
+    if p.exists():
+        data = json.loads(p.read_text())
+        print(f\"✓ FewWord v{data.get('version', 'unknown')} installed successfully\")
+        break
+else:
+    print('✓ FewWord installed (restart session to verify version)')
+"
    ```
 
-3. Inform the user:
+4. Inform the user:
    ```
    Update complete! Please restart your Claude Code session for the new version to take effect.
    ```

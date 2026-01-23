@@ -2,6 +2,12 @@
 
 All notable changes to FewWord will be documented in this file.
 
+## [1.3.9] - 2026-01-23
+
+### Fixed
+- **Cross-platform commands**: Rewrote `/init` and `/update` commands to use Python with `pathlib` instead of bash-only commands (`mkdir -p`, `rm -rf`, `find`). Now works on Windows without bash.
+- **Python fallback everywhere**: All inline Python uses `python3 ... || python ...` pattern for cross-platform compatibility.
+
 ## [1.3.8] - 2026-01-23
 
 ### Fixed
