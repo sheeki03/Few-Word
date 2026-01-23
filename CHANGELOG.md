@@ -2,6 +2,16 @@
 
 All notable changes to FewWord will be documented in this file.
 
+## [1.3.7] - 2026-01-23
+
+### Fixed
+- **Background command UI freeze**: Skip FewWord wrapping for `run_in_background` commands. When background commands fail/timeout (exit 143), Claude Code displays the command - showing the full ~100-line wrapper script would freeze the UI and break scrolling.
+
+## [1.3.6] - 2026-01-13
+
+### Fixed
+- Minor cross-platform fixes and orphaned temp file cleanup
+
 ## [1.3.5] - 2026-01-11
 
 ### Windows Compatibility

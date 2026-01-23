@@ -5,7 +5,7 @@ PreToolUse hook: Rewrite Bash commands to offload outputs to filesystem.
 Input (stdin): JSON with tool_name, tool_input, cwd, session_id
 Output (stdout): JSON with hookSpecificOutput containing updatedInput
 
-v1.3.6 features:
+v1.3.7 features:
 - Tiered offloading: inline (<512B), compact pointer (512B-4KB), preview (>4KB)
 - Ultra-compact pointer with summary (~40 tokens)
 - Smart preview: only for failures (exit != 0)
@@ -16,6 +16,7 @@ v1.3.6 features:
 - Redaction of secrets BEFORE writing to disk (ON by default)
 - Config file support (.fewwordrc.toml / .fewwordrc.json)
 - Command aliases for grouping (npm/yarn/pnpm -> npm group)
+- Skip background commands (prevents UI freeze when wrapper shown on failure)
 
 Environment variables (see config_loader.py for full list):
 - FEWWORD_INLINE_MAX: Max bytes for inline output (default: 512)
@@ -526,6 +527,10 @@ def main():
     tool_input = input_data.get("tool_input", {})
     command = tool_input.get("command", "")
     cwd = input_data.get("cwd", os.getcwd())
+
+    # Skip background commands - wrapper output floods UI when they fail/timeout
+    if tool_input.get("run_in_background"):
+        sys.exit(0)
 
     # Check escape hatch
     if is_disabled(cwd):
