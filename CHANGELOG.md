@@ -2,6 +2,11 @@
 
 All notable changes to FewWord will be documented in this file.
 
+## [1.3.10] - 2026-01-23
+
+### Fixed
+- **Smarter Python detection**: Changed from `python3 script 2>/dev/null || python script` to `command -v python3 >/dev/null && python3 script || python script`. This prevents falling back to `python` when the script itself fails, showing proper errors instead.
+
 ## [1.3.9] - 2026-01-23
 
 ### Fixed
